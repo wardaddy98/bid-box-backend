@@ -1,37 +1,3 @@
-// {
-//   "compilerOptions": {
-//     "rootDir": "./src",
-//     "outDir": "./dist",
-
-//     "module": "nodenext",
-//     "moduleResolution": "nodenext",
-//     "target": "esnext",
-//     "types": ["node"],
-//     "lib": ["esnext"],
-
-//     "sourceMap": true,
-//     "declaration": true,
-//     "declarationMap": true,
-
-//     "noUncheckedIndexedAccess": true,
-//     "exactOptionalPropertyTypes": true,
-//     "forceConsistentCasingInFileNames": true,
-//     "esModuleInterop": true,
-
-//     "strict": true,
-//     "verbatimModuleSyntax": true,
-//     "isolatedModules": true,
-//     "noUncheckedSideEffectImports": true,
-//     "moduleDetection": "force",
-//     "skipLibCheck": true,
-//     "experimentalDecorators": true,
-//     "emitDecoratorMetadata": true,
-//     "paths": {
-//       "@/constants": ["./src/constants.ts"]
-//     }
-//   }
-// }
-
 {
   "compilerOptions": {
     "useDefineForClassFields": true,
@@ -42,8 +8,7 @@
     "isolatedModules": true,
     "strict": true,
     "noFallthroughCasesInSwitch": true,
-    // "composite": true,
-    "target": "ES2020",
+    "target": "es2023",
     "outDir": "./dist",
     "rootDir": "./src",
     "module": "CommonJS",

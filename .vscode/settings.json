@@ -1,6 +1,12 @@
 {
-    "cSpell.words": [
-        "envalid",
-        "Gautam"
-    ]
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "js/ts.updateImportsOnFileMove.enabled": "always",
+
+  "editor.formatOnSave": true,
+  "editor.stickyScroll.enabled": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "always",
+    "source.fixAll.eslint": "always"
+  },
+  "cSpell.words": ["envalid", "Gautam"]
 }
