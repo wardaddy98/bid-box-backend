@@ -9,5 +9,7 @@ const constants = cleanEnv(process.env, {
     default: 'development',
   }),
   DB_URI: str(),
+  JWT_SECRET_KEY: str(),
+  REFRESH_TOKEN_SECRET_KEY: str(),
 });
 export default constants;

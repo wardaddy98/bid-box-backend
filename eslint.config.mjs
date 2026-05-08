@@ -16,5 +16,11 @@ export default defineConfig([
     rules: {},
   },
   tseslint.configs.recommended,
+  {
+    rules: {
+      'no-unused-vars': 'warn',
+      '@typescript-eslint/no-unused-vars': 'warn',
+    },
+  },
   eslintConfigPrettier,
 ]);
