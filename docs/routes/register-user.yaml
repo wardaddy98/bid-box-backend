@@ -1,0 +1,96 @@
+post:
+  summary: Create User
+
+  tags:
+    - User
+
+  description: Returns created user data and access token. Refresh token is set in cookie.
+
+  requestBody:
+    required: true
+
+    content:
+      application/json:
+        schema:
+          type: object
+
+          required:
+            - name
+            - email
+            - password
+            - role
+
+          properties:
+            name:
+              type: string
+              example: Aarav Malhotra
+
+            email:
+              type: string
+              format: email
+              example: aarav@example.com
+
+            password:
+              type: string
+              minLength: 8
+              maxLength: 16
+              pattern: '^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+={[}\]|\\:;"''<>,.?/~`]).{8,16}$'
+              example: Password@123
+
+            role:
+              type: string
+
+              enum:
+                - admin
+                - customer
+
+              example: customer
+
+            profileImage:
+              type: string
+              example: https://example.com/profile.jpg
+
+            bidsBalance:
+              type: integer
+              minimum: 1
+              example: 100
+
+            googleId:
+              type: string
+              example: google-oauth-id
+
+  responses:
+    '200':
+      $ref: "#/components/responses/SuccessResponse"
+
+    '400':
+      description: Validation error
+
+    '500':
+      description: Internal server error
+
+
+
+components:
+  responses:
+    SuccessResponse:
+      description: Success response
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: integer
+                example: 200
+              message:
+                type: string
+                example: "Success!"
+              body:
+                type: object
+                properties:
+                  user:
+                    $ref: "../schemas/user.yaml"
+                  token:
+                    type: string
+                    description: Access token

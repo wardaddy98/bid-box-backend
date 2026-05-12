@@ -1,0 +1,65 @@
+post:
+  summary: login User
+
+  tags:
+    - User
+
+  description: Returns created user data and access token. Refresh token is set in cookie.
+
+  requestBody:
+    required: true
+
+    content:
+      application/json:
+        schema:
+          type: object
+
+          required:
+            - email
+            - password
+
+          properties:
+            email:
+              type: string
+              format: email
+              example: aarav@example.com
+
+            password:
+              type: string
+              example: Password@123
+
+  responses:
+    '200':
+      $ref: "#/components/responses/SuccessResponse"
+
+    '400':
+      description: Validation error
+
+    '500':
+      description: Internal server error
+
+
+
+components:
+  responses:
+    SuccessResponse:
+      description: Success response
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: integer
+                example: 200
+              message:
+                type: string
+                example: "Success!"
+              body:
+                type: object
+                properties:
+                  user:
+                    $ref: "../schemas/user.yaml"
+                  token:
+                    type: string
+                    description: Access token

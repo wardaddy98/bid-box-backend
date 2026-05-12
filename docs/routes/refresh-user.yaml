@@ -1,0 +1,46 @@
+get:
+  summary: Generate fresh access token using refresh token cookie
+
+  tags:
+    - User
+
+  description: Generates a new access token using refresh token sent automatically via cookies.
+
+  parameters:
+    - in: cookie
+      name: refreshToken
+
+      required: true
+
+      schema:
+        type: string
+
+      description: Refresh token stored in httpOnly cookie
+
+  responses:
+    '200':
+      description: Success response
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: integer
+                example: 200
+              message:
+                type: string
+                example: "Success!"
+              body:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: Fresh Access token
+
+
+    '401':
+      description: Invalid or expired refresh token
+
+    '500':
+      description: Internal server error

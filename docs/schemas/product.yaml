@@ -1,0 +1,61 @@
+type: object
+properties:
+  _id:
+    type: string
+    format: objectId
+    example: "665f1d7a9d2f4c0012348888"
+
+  title:
+    type: string
+    example: "iPhone 15 Pro"
+
+  description:
+    type: string
+    example: "Latest Apple flagship smartphone"
+
+  productImages:
+    type: array
+    items:
+      type: string
+      format: uri
+      example: "https://example.com/product1.jpg"
+
+  originalPrice:
+    type: number
+    example: 129999
+
+  category:
+    type: string
+    enum:
+      - electronics
+      - automobile
+    example: "electronics"
+
+  availableStock:
+    type: integer
+    example: 20
+
+  reviews:
+    type: array
+    items:
+      type: string
+      format: objectId
+      example: "665f1d7a9d2f4c0012347777"
+
+  createdAt:
+    type: string
+    format: date-time
+    example: "2026-05-12T10:30:00.000Z"
+
+  updatedAt:
+    type: string
+    format: date-time
+    example: "2026-05-12T10:30:00.000Z"
+
+required:
+  - title
+  - description
+  - productImages
+  - originalPrice
+  - category
+  - availableStock

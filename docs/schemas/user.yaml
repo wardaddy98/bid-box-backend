@@ -1,0 +1,61 @@
+type: object
+properties:
+  _id:
+    type: string
+    format: objectId
+    example: "665f1d7a9d2f4c0012345678"
+
+  name:
+    type: string
+    example: "John Doe"
+
+  email:
+    type: string
+    format: email
+    example: "john@example.com"
+
+  password:
+    type: string
+    example: "$2b$10$K8sQ8QxF6d2Vw0z8Jm9N4u"
+
+  role:
+    type: string
+    enum:
+      - admin
+      - customer
+    example: "customer"
+
+  profileImage:
+    type: string
+    format: uri
+    example: "https://example.com/profile.jpg"
+
+  bidsBalance:
+    type: integer
+    example: 150
+
+  favoriteProducts:
+    type: array
+    items:
+      $ref: "./product.yaml" 
+        
+
+  googleId:
+    type: string
+    example: "109876543210987654321"
+
+  createdAt:
+    type: string
+    format: date-time
+    example: "2026-05-12T10:30:00.000Z"
+
+  updatedAt:
+    type: string
+    format: date-time
+    example: "2026-05-12T10:30:00.000Z"
+
+required:
+  - name
+  - email
+  - password
+  - role

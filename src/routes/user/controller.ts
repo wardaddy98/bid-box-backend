@@ -79,7 +79,7 @@ export const handleRefreshController = async (req: Request, res: Response) => {
       { expiresIn: '15m' },
     );
 
-    return handleResponse(res, 200, 'New access token generated', { token: freshToken, user });
+    return handleResponse(res, 200, 'New access token generated', { token: freshToken });
   } catch (error: unknown) {
     if (error instanceof ApiError) throw error;
 
