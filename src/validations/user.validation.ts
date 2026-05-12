@@ -1,7 +1,7 @@
 import { UserRole } from '@/models/user.model';
 import Joi from 'joi';
 
-export const userSchema = Joi.object({
+export const createUserSchema = Joi.object({
   name: Joi.string().required(),
   email: Joi.string().email().lowercase().required(),
   password: Joi.string()
@@ -10,6 +10,10 @@ export const userSchema = Joi.object({
   role: Joi.string().valid(UserRole.Admin, UserRole.Customer).required(),
   profileImage: Joi.string().optional(),
   bidsBalance: Joi.number().integer().positive().optional(),
-  favoriteProducts: Joi.any(),
   googleId: Joi.string().optional(),
+});
+
+export const loginUserSchema = Joi.object({
+  email: Joi.string().email().lowercase().required(),
+  password: Joi.string().required(),
 });

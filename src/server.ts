@@ -2,6 +2,7 @@ import baseRouter from '@/baseRouter';
 import constants from '@/constants';
 import connectDatabase from '@/utils/connectDatabase';
 import logger from '@/utils/logger';
+import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { Express } from 'express';
 import helmet from 'helmet';
@@ -21,8 +22,12 @@ import { handleError } from './middlewares/handleError';
     cors({
       origin: ['*'],
       methods: ['GET', 'POST', 'PUT', 'PATCH'],
+      // to allow cookies when frontend and backend are on different domains
+      credentials: true,
     }),
   );
+
+  app.use(cookieParser());
 
   app.use(express.json());
   app.use(helmet());

@@ -3,7 +3,7 @@ import { StatusCodes } from 'http-status-codes';
 import { handleResponse } from '../utils/handleResponse';
 import logger from '../utils/logger';
 
-class ApiError extends Error {
+export class ApiError extends Error {
   statusCode: StatusCodes;
 
   constructor(message: string, statusCode: StatusCodes) {
@@ -36,11 +36,17 @@ export class NotFoundError extends ApiError {
   }
 }
 
+export class InternalServerError extends ApiError {
+  constructor(message: string = 'An Unexpected error has occurred!') {
+    super(message, StatusCodes.INTERNAL_SERVER_ERROR);
+  }
+}
+
 export function handleError(error: unknown, req: Request, res: Response, next: NextFunction) {
   if (error instanceof ApiError) {
     handleResponse(res, error.statusCode, error.message);
   } else {
     logger.error('Internal Server Error', error);
-    handleResponse(res, StatusCodes.INTERNAL_SERVER_ERROR, 'AN Unexpected error has occurred!');
+    handleResponse(res, StatusCodes.INTERNAL_SERVER_ERROR, 'An Unexpected error has occurred!');
   }
 }
