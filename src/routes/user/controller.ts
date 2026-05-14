@@ -4,6 +4,7 @@ import {
   ForbiddenError,
   InternalServerError,
 } from '@/middlewares/handleError';
+import { User } from '@/models/user.model';
 import { handleResponse } from '@/utils/handleResponse';
 import { checkPasswordValid } from '@/utils/hashing';
 import {
@@ -27,8 +28,9 @@ export const handleRegisterController = async (req: Request, res: Response) => {
 
   const token = generateAccessToken(tokenData, { expiresIn: '15m' });
   await generateRefreshToken(tokenData, { expiresIn: '7d' }, res);
-
-  return handleResponse(res, 200, 'User created successfully', { user, token });
+  const userResponse: Partial<User> = _.cloneDeep(user);
+  delete userResponse.password;
+  return handleResponse(res, 200, 'User created successfully', { user: userResponse, token });
 };
 
 export const handleLoginController = async (req: Request, res: Response) => {
@@ -50,7 +52,10 @@ export const handleLoginController = async (req: Request, res: Response) => {
   const token = generateAccessToken(tokenData, { expiresIn: '15m' });
   await generateRefreshToken(tokenData, { expiresIn: '7d' }, res);
 
-  return handleResponse(res, 200, 'User logged in successfully', { user, token });
+  const userResponse: Partial<User> = _.cloneDeep(user);
+  delete userResponse.password;
+
+  return handleResponse(res, 200, 'User logged in successfully', { user: userResponse, token });
 };
 
 export const handleRefreshController = async (req: Request, res: Response) => {

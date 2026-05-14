@@ -44,7 +44,7 @@ export const generateRefreshToken = async (
   res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
     secure: NODE_ENV === 'production',
-    sameSite: 'none',
+    sameSite: NODE_ENV === 'production' ? 'none' : 'lax',
     maxAge: 604800000, //7 days
   });
 };

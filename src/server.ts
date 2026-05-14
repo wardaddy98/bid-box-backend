@@ -20,7 +20,7 @@ import { handleError } from './middlewares/handleError';
 
   app.use(
     cors({
-      origin: ['*'],
+      origin: ['http://localhost:8080'],
       methods: ['GET', 'POST', 'PUT', 'PATCH'],
       // to allow cookies when frontend and backend are on different domains
       credentials: true,
