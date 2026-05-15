@@ -14,7 +14,7 @@ import {
   verifyRefreshToken,
 } from '@/utils/token';
 import { Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
+import jwt, { JsonWebTokenError } from 'jsonwebtoken';
 import _ from 'lodash';
 import { createUser, findRefreshToken, findUserByEmail, findUserById } from './service';
 
@@ -90,8 +90,12 @@ export const handleRefreshController = async (req: Request, res: Response) => {
 
     if (error instanceof jwt.TokenExpiredError) {
       throw new ForbiddenError('Refresh token expired!');
-    } else {
-      throw new InternalServerError();
     }
+
+    if (error instanceof JsonWebTokenError) {
+      throw new ForbiddenError('Invalid Refresh Token!');
+    }
+
+    throw new InternalServerError();
   }
 };

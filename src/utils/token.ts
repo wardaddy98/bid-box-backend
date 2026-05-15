@@ -12,7 +12,6 @@ export interface RequestWithUser extends Request {
 
 export interface TokenCreationData {
   userId: mongoose.Types.ObjectId;
-  // userId: mongoose.Types.ObjectId;
   role: UserRole;
   email: string;
 }

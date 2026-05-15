@@ -1,7 +1,7 @@
 import { UserModel } from '@/models/user.model';
 import { RequestWithUser, verifyToken } from '@/utils/token';
 import { NextFunction, Response } from 'express';
-import jwt from 'jsonwebtoken';
+import jwt, { JsonWebTokenError } from 'jsonwebtoken';
 import _ from 'lodash';
 import { ApiError, ForbiddenError, InternalServerError, UnAuthorizedError } from './handleError';
 
@@ -31,11 +31,12 @@ export default async (req: RequestWithUser, res: Response, next: NextFunction) =
     if (error instanceof ApiError) throw error;
 
     if (error instanceof jwt.TokenExpiredError) {
-      throw new UnAuthorizedError('Token Expired');
-    } else {
-      throw new InternalServerError();
+      throw new UnAuthorizedError('Token Expired!');
     }
-  }
 
-  next();
+    if (error instanceof JsonWebTokenError) {
+      throw new ForbiddenError('Invalid Token!');
+    }
+    throw new InternalServerError();
+  }
 };
