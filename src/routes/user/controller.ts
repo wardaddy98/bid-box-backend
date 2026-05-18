@@ -1,10 +1,11 @@
+import constants from '@/constants';
 import {
   ApiError,
   BadRequestError,
   ForbiddenError,
   InternalServerError,
 } from '@/middlewares/handleError';
-import { User } from '@/models/user.model';
+import { User, UserRole } from '@/models/user.model';
 import { handleResponse } from '@/utils/handleResponse';
 import { checkPasswordValid } from '@/utils/hashing';
 import {
@@ -19,7 +20,14 @@ import _ from 'lodash';
 import { createUser, findRefreshToken, findUserByEmail, findUserById } from './service';
 
 export const handleRegisterController = async (req: Request, res: Response) => {
-  const user = await createUser(req.body);
+  const payload = req.body;
+  if (payload?.role === UserRole.Admin && payload?.adminCode !== constants.ADMIN_CODE) {
+    throw new BadRequestError('Admin code is incorrect!');
+  } else {
+    delete payload?.adminCode;
+  }
+
+  const user = await createUser(payload);
   const tokenData: TokenCreationData = {
     email: user.email,
     role: user.role,

@@ -1,10 +1,17 @@
-import { getModelForClass, modelOptions, prop, Ref } from '@typegoose/typegoose';
+import { getModelForClass, modelOptions, prop } from '@typegoose/typegoose';
 import mongoose from 'mongoose';
-import { Review } from './review.model';
+import { nanoid } from 'nanoid';
 
 export enum ProductCategoryEnum {
   Electronics = 'electronics',
-  Automobile = 'automobile',
+  Fashion = 'fashion',
+  'Home Appliances' = 'home_appliances',
+  Automobiles = 'automobiles',
+  Collectables = 'collectables',
+  Sports = 'sports',
+  Furniture = 'furniture',
+  Books = 'books',
+  Others = 'others',
 }
 
 @modelOptions({
@@ -16,6 +23,9 @@ export class Product {
   @prop({ required: true })
   public title!: string;
 
+  @prop({ required: true, unique: true, default: () => `PRD-${nanoid(6).toUpperCase()}` })
+  public productId!: string;
+
   @prop({ required: true })
   public description!: string;
 
@@ -23,16 +33,13 @@ export class Product {
   public productImages!: string[];
 
   @prop({ required: true })
-  public originalPrice!: number;
+  public sellingPrice!: number;
 
   @prop({ required: true, enum: ProductCategoryEnum })
   public category!: ProductCategoryEnum;
 
   @prop({ required: true })
   public availableStock!: number;
-
-  @prop({ default: [], ref: () => Review })
-  public reviews?: Ref<Review>[];
 }
 
 export const ProductModel = getModelForClass(Product);

@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { getReasonPhrase, StatusCodes } from 'http-status-codes';
+import { StatusCodes } from 'http-status-codes';
 
 export interface ResponseObject<T> {
   status: StatusCodes;
@@ -15,7 +15,7 @@ export const handleResponse = <T>(
 ): Response => {
   const responseObject: ResponseObject<T> = {
     status: statusCode,
-    message: customMessage || getReasonPhrase(statusCode),
+    message: customMessage || '',
     ...(body !== undefined && {
       body,
     }),

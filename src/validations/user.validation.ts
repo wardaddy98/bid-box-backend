@@ -11,6 +11,7 @@ export const createUserSchema = Joi.object({
   profileImage: Joi.string().optional(),
   bidsBalance: Joi.number().integer().positive().optional(),
   googleId: Joi.string().optional(),
+  adminCode: Joi.string().length(4).optional(),
 });
 
 export const loginUserSchema = Joi.object({

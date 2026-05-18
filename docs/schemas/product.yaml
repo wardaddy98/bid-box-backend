@@ -20,7 +20,7 @@ properties:
       format: uri
       example: "https://example.com/product1.jpg"
 
-  originalPrice:
+  sellingPrice:
     type: number
     example: 129999
 
@@ -56,6 +56,6 @@ required:
   - title
   - description
   - productImages
-  - originalPrice
+  - sellingPrice
   - category
   - availableStock

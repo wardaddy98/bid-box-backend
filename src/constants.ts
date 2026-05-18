@@ -11,5 +11,6 @@ const constants = cleanEnv(process.env, {
   DB_URI: str(),
   JWT_SECRET_KEY: str(),
   REFRESH_TOKEN_SECRET_KEY: str(),
+  ADMIN_CODE: str(),
 });
 export default constants;
