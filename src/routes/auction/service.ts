@@ -1,0 +1,160 @@
+import { BadRequestError } from '@/middlewares/handleError';
+import { Auction, AuctionModel } from '@/models/auction.model';
+import { ProductCategoryEnum } from '@/models/product.model';
+import { IPagination } from '@/utils/handlePagination';
+import stringToObjectId from '@/utils/stringToObjectId';
+import mongoose from 'mongoose';
+
+interface ICreateAuctionPayload {
+  product: mongoose.Types.ObjectId;
+  liveOn: Date;
+  startingBid: number;
+}
+
+interface IGetAllAuctionsServiceResponse {
+  data: Auction[];
+  pagination: IPagination;
+}
+
+export const getAllAuctions = async (
+  page: number,
+  limit: number,
+  category: string,
+  search: string,
+): Promise<IGetAllAuctionsServiceResponse> => {
+  console.log(
+    {
+      page,
+      limit,
+      category,
+      search,
+    },
+    'CKK',
+  );
+  const skip = (page - 1) * limit;
+
+  const data = await AuctionModel.aggregate([
+    {
+      $lookup: {
+        from: 'products',
+        localField: 'product',
+        foreignField: '_id',
+        as: 'product',
+      },
+    },
+    {
+      $unwind: {
+        path: '$product',
+      },
+    },
+
+    {
+      $match: {
+        ...(category && Object.values(ProductCategoryEnum).includes(category as ProductCategoryEnum)
+          ? { 'product.category': category }
+          : {}),
+
+        ...(search
+          ? {
+              $or: [
+                {
+                  auctionId: {
+                    $regex: search,
+                    $options: 'i',
+                  },
+                },
+                {
+                  'product.title': {
+                    $regex: search,
+                    $options: 'i',
+                  },
+                },
+                {
+                  'product.productId': {
+                    $regex: search,
+                    $options: 'i',
+                  },
+                },
+              ],
+            }
+          : {}),
+      },
+    },
+
+    {
+      $sort: {
+        createdAt: -1,
+      },
+    },
+    {
+      $facet: {
+        data: [
+          {
+            $skip: skip,
+          },
+          {
+            $limit: limit,
+          },
+        ],
+        countPipeline: [
+          {
+            $count: 'count',
+          },
+        ],
+      },
+    },
+
+    {
+      $addFields: {
+        totalCount: {
+          $ifNull: [
+            {
+              $arrayElemAt: ['$countPipeline.count', 0],
+            },
+            0,
+          ],
+        },
+      },
+    },
+    {
+      $project: {
+        data: 1,
+        pagination: {
+          totalCount: '$totalCount',
+          currentPage: {
+            $literal: page,
+          },
+          totalPages: {
+            $ceil: {
+              $divide: ['$totalCount', limit],
+            },
+          },
+        },
+      },
+    },
+  ]).exec();
+
+  return data[0];
+};
+
+export const createAuction = (payload: ICreateAuctionPayload) => {
+  return AuctionModel.create(payload);
+};
+
+export const editAuction = async (auctionId: string, payload: Record<string, unknown>) => {
+  const updated = await AuctionModel.findOneAndUpdate(
+    { auctionId },
+    { startingBid: payload?.startingBid },
+    {
+      returnDocument: 'after',
+    },
+  );
+  if (!updated) {
+    throw new BadRequestError('Auction not found!');
+  }
+  return updated;
+};
+
+export const getAuctionById = (id: string) => {
+  return AuctionModel.findById(stringToObjectId(id));
+};

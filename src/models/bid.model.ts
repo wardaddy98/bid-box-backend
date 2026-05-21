@@ -21,4 +21,4 @@ export class Bid {
   public bidsPlaced!: number;
 }
 
-export const UserModel = getModelForClass(Bid);
+export const BidModel = getModelForClass(Bid);

@@ -1,9 +1,14 @@
 import { Product, ProductCategoryEnum, ProductModel } from '@/models/product.model';
 import handlePagination, { IPagination } from '@/utils/handlePagination';
+import stringToObjectId from '@/utils/stringToObjectId';
 import { QueryFilter } from 'mongoose';
 
 export const createProduct = async (payload: Omit<Product, 'productId'>): Promise<Product> => {
   return ProductModel.create({ ...payload });
+};
+
+export const getProductById = (id: string) => {
+  return ProductModel.findById(stringToObjectId(id));
 };
 
 export const getAllProducts = async (
@@ -28,4 +33,8 @@ export const getAllProducts = async (
   }
 
   return handlePagination<Product>(ProductModel, page, filterOptions, limit);
+};
+
+export const getAllProductsUnPaginated = () => {
+  return ProductModel.find();
 };

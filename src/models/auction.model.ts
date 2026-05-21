@@ -1,5 +1,6 @@
 import { getModelForClass, modelOptions, prop, Ref } from '@typegoose/typegoose';
 import mongoose from 'mongoose';
+import { nanoid } from 'nanoid';
 import { Bid } from './bid.model';
 import { Product } from './product.model';
 
@@ -15,10 +16,22 @@ export enum AuctionStatusEnum {
 export class Auction {
   public _id!: mongoose.Types.ObjectId;
 
+  @prop({ required: true, unique: true, default: () => `AUC-${nanoid(6).toUpperCase()}` })
+  public auctionId!: string;
+
   @prop({ required: true, ref: () => Product })
   public product!: Ref<Product>;
 
-  @prop({ required: true, ref: () => Bid })
+  @prop({
+    required: true,
+    validate: {
+      validator: Number.isInteger,
+      message: 'Starting Bid must be an integer',
+    },
+  })
+  public startingBid!: number;
+
+  @prop({ required: true, ref: () => Bid, default: [] })
   public bidsPlaced!: Ref<Bid>[];
 
   @prop({ required: true, enum: AuctionStatusEnum, default: AuctionStatusEnum.Pending })
@@ -28,4 +41,4 @@ export class Auction {
   public liveOn!: Date;
 }
 
-export const UserModel = getModelForClass(Auction);
+export const AuctionModel = getModelForClass(Auction);

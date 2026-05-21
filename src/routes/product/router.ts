@@ -3,7 +3,11 @@ import validateQueryString from '@/middlewares/validateQueryStrings';
 import validateSchema from '@/middlewares/validateSchema';
 import { createProductSchema, getAllProductsQuerySchema } from '@/validations/product.validation';
 import express from 'express';
-import { handleCreateProduct, handleGetAllProducts } from './controller';
+import {
+  handleCreateProduct,
+  handleGetAllProducts,
+  handleGetAllProductsUnpaginated,
+} from './controller';
 
 const router = express.Router();
 
@@ -12,4 +16,5 @@ router
   .post(isLoggedIn, validateSchema(createProductSchema), handleCreateProduct)
   .get(isLoggedIn, validateQueryString(getAllProductsQuerySchema), handleGetAllProducts);
 
+router.route('/raw').get(isLoggedIn, handleGetAllProductsUnpaginated);
 export default router;

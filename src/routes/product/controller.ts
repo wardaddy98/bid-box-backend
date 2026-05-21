@@ -1,14 +1,7 @@
-import { ProductCategoryEnum } from '@/models/product.model';
+import { GetAllQuery } from '@/types/common';
 import { handleResponse } from '@/utils/handleResponse';
 import { Request, Response } from 'express';
-import { createProduct, getAllProducts } from './service';
-
-export interface GetAllProductsQuery {
-  page?: string;
-  limit?: string;
-  category?: ProductCategoryEnum | 'all_categories';
-  search?: string;
-}
+import { createProduct, getAllProducts, getAllProductsUnPaginated } from './service';
 
 export const handleCreateProduct = async (req: Request, res: Response) => {
   const product = await createProduct(req.body);
@@ -17,7 +10,7 @@ export const handleCreateProduct = async (req: Request, res: Response) => {
 };
 
 export const handleGetAllProducts = async (req: Request, res: Response) => {
-  const queryStrings: GetAllProductsQuery = req.query;
+  const queryStrings: GetAllQuery = req.query;
 
   const paginatedData = await getAllProducts(
     Number(queryStrings?.page ?? 1),
@@ -27,4 +20,10 @@ export const handleGetAllProducts = async (req: Request, res: Response) => {
   );
 
   return handleResponse(res, 200, '', paginatedData);
+};
+
+export const handleGetAllProductsUnpaginated = async (req: Request, res: Response) => {
+  const products = await getAllProductsUnPaginated();
+
+  return handleResponse(res, 200, '', { data: products });
 };
