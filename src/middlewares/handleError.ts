@@ -43,6 +43,7 @@ export class InternalServerError extends ApiError {
 }
 
 export function handleError(error: unknown, req: Request, res: Response, next: NextFunction) {
+  console.log(error, 'LKK');
   if (error instanceof ApiError) {
     handleResponse(res, error.statusCode, error.message);
   } else {

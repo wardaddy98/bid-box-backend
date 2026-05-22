@@ -21,18 +21,9 @@ export const getAllAuctions = async (
   limit: number,
   category: string,
   search: string,
+  status: string,
 ): Promise<IGetAllAuctionsServiceResponse> => {
-  console.log(
-    {
-      page,
-      limit,
-      category,
-      search,
-    },
-    'CKK',
-  );
   const skip = (page - 1) * limit;
-
   const data = await AuctionModel.aggregate([
     {
       $lookup: {
@@ -50,6 +41,7 @@ export const getAllAuctions = async (
 
     {
       $match: {
+        ...(status ? { status } : {}),
         ...(category && Object.values(ProductCategoryEnum).includes(category as ProductCategoryEnum)
           ? { 'product.category': category }
           : {}),
@@ -157,4 +149,42 @@ export const editAuction = async (auctionId: string, payload: Record<string, unk
 
 export const getAuctionById = (id: string) => {
   return AuctionModel.findById(stringToObjectId(id));
+};
+
+export const getAuctionByAuctionId = (auctionId: string) => {
+  return AuctionModel.findOne({ auctionId });
+};
+
+export const getSingleAuctionData = async (auctionId: string) => {
+  const data = await AuctionModel.aggregate([
+    {
+      $match: {
+        auctionId,
+      },
+    },
+    {
+      $lookup: {
+        from: 'products',
+        localField: 'product',
+        foreignField: '_id',
+        as: 'product',
+      },
+    },
+
+    {
+      $unwind: {
+        path: '$product',
+      },
+    },
+    {
+      $lookup: {
+        from: 'bids',
+        localField: '_id',
+        foreignField: 'auction',
+        as: 'bids',
+      },
+    },
+  ]).exec();
+
+  return data?.[0];
 };

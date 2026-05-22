@@ -1,6 +1,6 @@
 import { getModelForClass, modelOptions, prop, Ref } from '@typegoose/typegoose';
 import mongoose from 'mongoose';
-import { Product } from './product.model';
+import { Auction } from './auction.model';
 
 export enum UserRole {
   Admin = 'admin',
@@ -37,8 +37,8 @@ export class User {
   })
   public bidsBalance?: number;
 
-  @prop({ default: [], ref: () => Product })
-  public favoriteProducts?: Ref<Product>[];
+  @prop({ default: [], ref: () => Auction })
+  public favoriteAuctions?: Ref<Auction>[];
 
   @prop()
   public googleId?: string;

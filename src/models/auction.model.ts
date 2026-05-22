@@ -1,7 +1,6 @@
 import { getModelForClass, modelOptions, prop, Ref } from '@typegoose/typegoose';
 import mongoose from 'mongoose';
 import { nanoid } from 'nanoid';
-import { Bid } from './bid.model';
 import { Product } from './product.model';
 
 export enum AuctionStatusEnum {
@@ -30,9 +29,6 @@ export class Auction {
     },
   })
   public startingBid!: number;
-
-  @prop({ required: true, ref: () => Bid, default: [] })
-  public bidsPlaced!: Ref<Bid>[];
 
   @prop({ required: true, enum: AuctionStatusEnum, default: AuctionStatusEnum.Pending })
   public status!: AuctionStatusEnum;

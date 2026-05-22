@@ -1,19 +1,24 @@
 import { BadRequestError } from '@/middlewares/handleError';
+import { AuctionStatusEnum } from '@/models/auction.model';
 import { GetAllQuery } from '@/types/common';
 import { handleResponse } from '@/utils/handleResponse';
 import { Request, Response } from 'express';
 import _ from 'lodash';
 import { getProductById } from '../product/service';
-import { createAuction, editAuction, getAllAuctions } from './service';
+import { createAuction, editAuction, getAllAuctions, getSingleAuctionData } from './service';
+
+interface IGetAllAuctionsQuery extends GetAllQuery {
+  status?: AuctionStatusEnum;
+}
 
 export const handleGetAllAuctions = async (req: Request, res: Response) => {
-  const queryStrings: GetAllQuery = req.query;
-
+  const queryStrings: IGetAllAuctionsQuery = req.query;
   const paginatedResponse = await getAllAuctions(
     Number(queryStrings?.page || 1),
     Number(queryStrings?.limit || 10),
-    queryStrings.category || '',
-    queryStrings.search || '',
+    queryStrings?.category || '',
+    queryStrings?.search || '',
+    queryStrings?.status || '',
   );
 
   return handleResponse(res, 200, '', paginatedResponse);
@@ -46,6 +51,20 @@ export const handleEditAuction = async (req: Request, res: Response) => {
   const auction = await editAuction(auctionId, payload);
 
   return handleResponse(res, 200, 'Auction edited successfully!', {
+    data: auction,
+  });
+};
+
+export const handleGetSingleAuction = async (req: Request, res: Response) => {
+  const auctionId = req.params?.auctionId as string;
+
+  if (!auctionId) {
+    throw new BadRequestError('Auction id missing!');
+  }
+
+  const auction = await getSingleAuctionData(auctionId);
+
+  return handleResponse(res, 200, '', {
     data: auction,
   });
 };

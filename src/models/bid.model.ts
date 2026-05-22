@@ -1,5 +1,6 @@
 import { getModelForClass, modelOptions, prop, Ref } from '@typegoose/typegoose';
 import mongoose from 'mongoose';
+import { Auction } from './auction.model';
 import { User } from './user.model';
 
 @modelOptions({
@@ -8,8 +9,11 @@ import { User } from './user.model';
 export class Bid {
   public _id!: mongoose.Types.ObjectId;
 
+  @prop({ required: true, ref: () => Auction })
+  public auction!: Ref<Auction>;
+
   @prop({ required: true, ref: () => User })
-  public placedBy!: Ref<User>;
+  public user!: Ref<User>;
 
   @prop({
     required: true,
@@ -18,7 +22,7 @@ export class Bid {
       message: 'Bids Placed must be an integer',
     },
   })
-  public bidsPlaced!: number;
+  public amount!: number;
 }
 
 export const BidModel = getModelForClass(Bid);

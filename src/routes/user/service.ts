@@ -36,3 +36,31 @@ export const findUserById = async (userId: mongoose.Types.ObjectId): Promise<Use
 export const findRefreshToken = async (token: string): Promise<RefreshToken | null> => {
   return RefreshTokenModel.findOne({ token }).lean();
 };
+
+export const addBookmark = (auction: mongoose.Types.ObjectId, user: mongoose.Types.ObjectId) => {
+  return UserModel.findByIdAndUpdate(
+    user,
+    {
+      $addToSet: {
+        favoriteAuctions: auction,
+      },
+    },
+    {
+      returnDocument: 'after',
+    },
+  );
+};
+
+export const removeBookmark = (auction: mongoose.Types.ObjectId, user: mongoose.Types.ObjectId) => {
+  return UserModel.findByIdAndUpdate(
+    user,
+    {
+      $pull: {
+        favoriteAuctions: auction,
+      },
+    },
+    {
+      returnDocument: 'after',
+    },
+  );
+};

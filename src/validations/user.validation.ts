@@ -18,3 +18,7 @@ export const loginUserSchema = Joi.object({
   email: Joi.string().email().lowercase().required(),
   password: Joi.string().required(),
 });
+
+export const bookmarkSchema = Joi.object({
+  auctionId: Joi.string().required(),
+});

@@ -8,7 +8,12 @@ import {
   getAllAuctionsQuerySchema,
 } from '@/validations/auction.validation';
 import express from 'express';
-import { handleCreateAuction, handleEditAuction, handleGetAllAuctions } from './controller';
+import {
+  handleCreateAuction,
+  handleEditAuction,
+  handleGetAllAuctions,
+  handleGetSingleAuction,
+} from './controller';
 
 const router = express.Router();
 
@@ -19,6 +24,7 @@ router
 
 router
   .route('/:auctionId')
+  .get(isLoggedIn, handleGetSingleAuction)
   .patch(isLoggedIn, isAdmin, validateSchema(editAuctionSchema), handleEditAuction);
 
 export default router;

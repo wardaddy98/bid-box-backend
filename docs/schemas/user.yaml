@@ -34,10 +34,11 @@ properties:
     type: integer
     example: 150
 
-  favoriteProducts:
+  favoriteAuctions:
     type: array
     items:
-      $ref: "./product.yaml" 
+    # SG_FIX
+      # $ref: "./auction.yaml" 
         
 
   googleId:

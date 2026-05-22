@@ -11,13 +11,23 @@ import { checkPasswordValid } from '@/utils/hashing';
 import {
   generateAccessToken,
   generateRefreshToken,
+  RequestWithUser,
   TokenCreationData,
   verifyRefreshToken,
 } from '@/utils/token';
 import { Request, Response } from 'express';
 import jwt, { JsonWebTokenError } from 'jsonwebtoken';
 import _ from 'lodash';
-import { createUser, findRefreshToken, findUserByEmail, findUserById } from './service';
+import mongoose from 'mongoose';
+import { getAuctionByAuctionId } from '../auction/service';
+import {
+  addBookmark,
+  createUser,
+  findRefreshToken,
+  findUserByEmail,
+  findUserById,
+  removeBookmark,
+} from './service';
 
 export const handleRegisterController = async (req: Request, res: Response) => {
   const payload = req.body;
@@ -106,4 +116,34 @@ export const handleRefreshController = async (req: Request, res: Response) => {
 
     throw new InternalServerError();
   }
+};
+
+export const handleAddBookmark = async (req: RequestWithUser, res: Response) => {
+  const auctionId = req?.body?.auctionId;
+
+  const auction = await getAuctionByAuctionId(auctionId);
+
+  if (_.isEmpty(auction)) {
+    throw new BadRequestError('Auction does not exist!');
+  }
+
+  const user = await addBookmark(auction._id, req?.user?._id as mongoose.Types.ObjectId);
+  return handleResponse(res, 200, 'Auction added to favorite', {
+    data: user,
+    user,
+    choot: req?.user?._id,
+  });
+};
+
+export const handleRemoveBookmark = async (req: RequestWithUser, res: Response) => {
+  const auctionId = req?.body?.auctionId;
+
+  const auction = await getAuctionByAuctionId(auctionId);
+
+  if (_.isEmpty(auction)) {
+    throw new BadRequestError('Auction does not exist!');
+  }
+
+  const user = await removeBookmark(auction._id, req?.user?._id as mongoose.Types.ObjectId);
+  return handleResponse(res, 200, 'Auction removed from favorite', { data: user });
 };

@@ -11,6 +11,10 @@ export const getProductById = (id: string) => {
   return ProductModel.findById(stringToObjectId(id));
 };
 
+export const getProductByProductId = (productId: string) => {
+  return ProductModel.findOne({ productId });
+};
+
 export const getAllProducts = async (
   page: number,
   limit: number,
