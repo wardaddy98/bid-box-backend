@@ -3,7 +3,7 @@ import { Auction, AuctionModel } from '@/models/auction.model';
 import { ProductCategoryEnum } from '@/models/product.model';
 import { IPagination } from '@/utils/handlePagination';
 import stringToObjectId from '@/utils/stringToObjectId';
-import mongoose from 'mongoose';
+import mongoose, { QueryFilter, UpdateQuery } from 'mongoose';
 
 interface ICreateAuctionPayload {
   product: mongoose.Types.ObjectId;
@@ -181,10 +181,45 @@ export const getSingleAuctionData = async (auctionId: string) => {
         from: 'bids',
         localField: '_id',
         foreignField: 'auction',
+        pipeline: [
+          {
+            $lookup: {
+              from: 'users',
+              localField: 'user',
+              foreignField: '_id',
+              as: 'user',
+            },
+          },
+          {
+            $unwind: '$user',
+          },
+
+          {
+            $project: {
+              'user.password': 0,
+              'user.bidsBalance': 0,
+              'user.favoriteAuctions': 0,
+              'user.role': 0,
+              'user.googleId': 0,
+              'user.createdAt': 0,
+              'user.updatedAt': 0,
+            },
+          },
+          {
+            $sort: {
+              createdAt: -1,
+            },
+          },
+        ],
+
         as: 'bids',
       },
     },
   ]).exec();
 
   return data?.[0];
+};
+
+export const updateAuction = (find: QueryFilter<Auction>, update: UpdateQuery<Auction>) => {
+  return AuctionModel.updateOne(find, update);
 };
