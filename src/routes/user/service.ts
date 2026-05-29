@@ -13,7 +13,7 @@ export const createUser = async (payload: User): Promise<User> => {
     throw new BadRequestError('User with this email already exists!');
   }
   const hash = await generateHash(payload.password);
-  return UserModel.create({ ...payload, password: hash });
+  return (await UserModel.create({ ...payload, password: hash })).toObject();
 };
 
 export const saveRefreshToken = async (refreshToken: string, tokenData: DecodedTokenData) => {

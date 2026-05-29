@@ -8,6 +8,7 @@ import {
 import { User, UserRole } from '@/models/user.model';
 import { handleResponse } from '@/utils/handleResponse';
 import { checkPasswordValid } from '@/utils/hashing';
+import { deleteFile, generateSignedUrl, uploadFile } from '@/utils/s3Utils';
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -19,6 +20,8 @@ import { Request, Response } from 'express';
 import jwt, { JsonWebTokenError } from 'jsonwebtoken';
 import _ from 'lodash';
 import mongoose from 'mongoose';
+import 'multer';
+import { nanoid } from 'nanoid';
 import { getAuctionByAuctionId } from '../auction/service';
 import {
   addBookmark,
@@ -30,25 +33,46 @@ import {
 } from './service';
 
 export const handleRegisterController = async (req: Request, res: Response) => {
+  const file = req?.file as Express.Multer.File;
   const payload = req.body;
+
   if (payload?.role === UserRole.Admin && payload?.adminCode !== constants.ADMIN_CODE) {
     throw new BadRequestError('Admin code is incorrect!');
   } else {
     delete payload?.adminCode;
   }
 
-  const user = await createUser(payload);
-  const tokenData: TokenCreationData = {
-    email: user.email,
-    role: user.role,
-    userId: user._id,
-  };
+  let objectKey = '';
+  try {
+    let profileImageSignedUrl = '';
+    if (file) {
+      objectKey = `profile/${Date.now()}-${nanoid()}`;
+      await uploadFile(objectKey, file);
+      profileImageSignedUrl = await generateSignedUrl(objectKey);
+    }
 
-  const token = generateAccessToken(tokenData, { expiresIn: '15m' });
-  await generateRefreshToken(tokenData, { expiresIn: '7d' }, res);
-  const userResponse: Partial<User> = _.cloneDeep(user);
-  delete userResponse.password;
-  return handleResponse(res, 200, 'User created successfully', { user: userResponse, token });
+    const user = await createUser({ ...payload, profileImage: objectKey });
+    const tokenData: TokenCreationData = {
+      email: user.email,
+      role: user.role,
+      userId: user._id,
+    };
+
+    const token = generateAccessToken(tokenData, { expiresIn: '15m' });
+    await generateRefreshToken(tokenData, { expiresIn: '7d' }, res);
+
+    const userResponse: Partial<User> = _.cloneDeep(user);
+    delete userResponse.password;
+    return handleResponse(res, 200, 'User created successfully', {
+      user: { ...userResponse, profileImage: profileImageSignedUrl },
+      token,
+    });
+  } catch (err) {
+    if (objectKey) {
+      await deleteFile(objectKey);
+    }
+    throw err;
+  }
 };
 
 export const handleLoginController = async (req: Request, res: Response) => {
@@ -73,7 +97,15 @@ export const handleLoginController = async (req: Request, res: Response) => {
   const userResponse: Partial<User> = _.cloneDeep(user);
   delete userResponse.password;
 
-  return handleResponse(res, 200, 'User logged in successfully', { user: userResponse, token });
+  let profileImageSignedUrl = '';
+  if (user?.profileImage) {
+    profileImageSignedUrl = await generateSignedUrl(user?.profileImage);
+  }
+
+  return handleResponse(res, 200, 'User logged in successfully', {
+    user: { ...userResponse, profileImage: profileImageSignedUrl },
+    token,
+  });
 };
 
 export const handleRefreshController = async (req: Request, res: Response) => {
@@ -94,6 +126,11 @@ export const handleRefreshController = async (req: Request, res: Response) => {
     const user = await findUserById(tokenData.userId);
 
     if (_.isEmpty(user)) {
+      throw new ForbiddenError('Invalid Refresh Token');
+    }
+
+    //to check if user in refresh token received in client is same as refresh token saved in DB
+    if (user._id !== tokenDataFromDB.user) {
       throw new ForbiddenError('Invalid Refresh Token');
     }
 

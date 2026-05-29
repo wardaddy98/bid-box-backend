@@ -9,7 +9,6 @@ export const createUserSchema = Joi.object({
     .required(),
   role: Joi.string().valid(UserRole.Admin, UserRole.Customer).required(),
   profileImage: Joi.string().optional(),
-  bidsBalance: Joi.number().integer().positive().optional(),
   googleId: Joi.string().optional(),
   adminCode: Joi.string().length(4).optional(),
 });
