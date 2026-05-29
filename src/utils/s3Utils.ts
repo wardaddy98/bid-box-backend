@@ -1,0 +1,62 @@
+import constants from '@/constants';
+import { DeleteObjectsCommand, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import 'multer';
+import { nanoid } from 'nanoid';
+import createS3Client from './creates3Client';
+
+const s3 = createS3Client();
+
+export const uploadFile = (objectKey: string, file: Express.Multer.File) => {
+  s3.send(
+    new PutObjectCommand({
+      Bucket: constants.AWS_S3_BUCKET_NAME,
+      Key: objectKey,
+      Body: file.buffer,
+      ContentType: file.mimetype,
+    }),
+  );
+};
+
+export const generateSignedUrl = async (objectKey: string) => {
+  const command = new GetObjectCommand({
+    Bucket: constants.AWS_S3_BUCKET_NAME,
+    Key: objectKey,
+  });
+
+  const signedUrl = await getSignedUrl(s3, command, {
+    //15 mins
+    expiresIn: 60 * 15,
+  });
+
+  return signedUrl;
+};
+
+export const handleMultipleUpload = async (
+  files: Express.Multer.File[],
+  type: 'products' | 'profile',
+): Promise<string[]> => {
+  const objectKeys: string[] = [];
+
+  await Promise.all(
+    files.map(file => {
+      const objectKey = `${type}/${Date.now()}-${nanoid()}`;
+      objectKeys.push(objectKey);
+
+      return uploadFile(objectKey, file);
+    }),
+  );
+
+  return objectKeys;
+};
+
+export const handleMultipleDelete = async (objectKeys: string[]) => {
+  s3.send(
+    new DeleteObjectsCommand({
+      Bucket: constants.AWS_S3_BUCKET_NAME,
+      Delete: {
+        Objects: objectKeys.map(Key => ({ Key })),
+      },
+    }),
+  );
+};

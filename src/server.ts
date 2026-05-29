@@ -7,9 +7,11 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { Express } from 'express';
 import helmet from 'helmet';
+import http from 'http';
 import path from 'path';
 import swaggerUi from 'swagger-ui-express';
 import { handleError } from './middlewares/handleError';
+import { initializeSocketInstance } from './socket/socket';
 
 (async () => {
   await connectDatabase();
@@ -17,6 +19,11 @@ import { handleError } from './middlewares/handleError';
   const { PORT, isProduction } = constants;
 
   const app: Express = express();
+
+  // node HTTP server
+  const server = http.createServer(app);
+
+  initializeSocketInstance(server);
 
   app.use(
     cors({
@@ -44,7 +51,7 @@ import { handleError } from './middlewares/handleError';
   //global error handler middleware which will catch custom class errors as well as uncaught errors
   app.use(handleError);
 
-  app.listen(PORT, () => {
+  server.listen(PORT, () => {
     logger.info(`Server live on Port: ${PORT}`);
   });
 })();

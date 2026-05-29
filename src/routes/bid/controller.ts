@@ -1,3 +1,5 @@
+import { AuctionSocketEvents } from '@/socket/listeners/auction.listeners';
+import { getIO } from '@/socket/socket';
 import { handleResponse } from '@/utils/handleResponse';
 import { RequestWithUser } from '@/utils/token';
 import { Response } from 'express';
@@ -20,9 +22,8 @@ export interface ICreateBidData {
 }
 
 export const handlePlaceBid = async (req: IPlaceBidReq, res: Response) => {
-  const { amount, auctionId } = req.body;
-
-  const bidAmount = Number(amount || 0);
+  const bidAmount = Number(req?.body?.amount || 0);
+  const auctionId = req?.body?.auctionId || '';
 
   const { bid, updatedUser, updatedAuction } = await createBidTransaction(
     bidAmount,
@@ -30,15 +31,29 @@ export const handlePlaceBid = async (req: IPlaceBidReq, res: Response) => {
     auctionId,
   );
 
-  //bid and expiresAt should be emitted to all users
+  const bidderUserData = {
+    email: updatedUser?.email,
+    name: updatedUser?.name,
+    profileImage: updatedUser?.profileImage,
+  };
+
+  //new bid and updated expiresAt and bidder user is emitted to all users in the room of current auction
+  const io = getIO();
+  if (io) {
+    io.to(auctionId).emit(AuctionSocketEvents.BID_PLACED, {
+      data: {
+        bid,
+        user: bidderUserData,
+        auctionExpiresAt: updatedAuction?.expiresAt,
+      },
+    });
+  }
 
   return handleResponse(res, 200, 'Bid placed', {
     data: {
       ...(bid ?? {}),
       user: {
-        email: updatedUser?.email,
-        name: updatedUser?.name,
-        profileImage: updatedUser?.profileImage,
+        ...bidderUserData,
         bidsBalance: updatedUser?.bidsBalance,
       },
     },

@@ -19,7 +19,7 @@ const handlePagination = async <T>(
   const skip = (currentPage - 1) * limit;
 
   const [data, totalCount] = await Promise.all([
-    model.find(filterOptions).skip(skip).limit(limit),
+    model.find(filterOptions).skip(skip).limit(limit).sort({ createdAt: -1 }).lean(),
     model.countDocuments(filterOptions),
   ]);
 

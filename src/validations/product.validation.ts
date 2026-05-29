@@ -4,11 +4,19 @@ import Joi from 'joi';
 export const createProductSchema = Joi.object({
   title: Joi.string().required(),
   description: Joi.string().required(),
-  productImages: Joi.array().items(Joi.string()).min(1).required(),
   sellingPrice: Joi.number().positive().required(),
   category: Joi.string()
     .valid(...Object.values(ProductCategoryEnum))
     .required(),
+  availableStock: Joi.number().integer().min(0).required(),
+});
+
+export const editProductSchema = Joi.object({
+  description: Joi.string().required(),
+  deletedFilesObjectKeys: Joi.alternatives()
+    .try(Joi.string().min(1), Joi.array().items(Joi.string()).min(0))
+    .optional(),
+  sellingPrice: Joi.number().positive().required(),
   availableStock: Joi.number().integer().min(0).required(),
 });
 

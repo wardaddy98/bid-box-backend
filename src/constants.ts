@@ -12,5 +12,10 @@ const constants = cleanEnv(process.env, {
   JWT_SECRET_KEY: str(),
   REFRESH_TOKEN_SECRET_KEY: str(),
   ADMIN_CODE: str(),
+  SOCKET_ADMIN_PASSWORD: str(),
+  AWS_ACCESS_KEY_ID: str(),
+  AWS_ACCESS_KEY_SECRET: str(),
+  AWS_S3_BUCKET_REGION: str(),
+  AWS_S3_BUCKET_NAME: str(),
 });
 export default constants;

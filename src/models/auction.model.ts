@@ -13,6 +13,7 @@ export enum AuctionStatusEnum {
 
 //compound index for status and liveOn, as these are repeatedly searched in cron job
 @index({ status: 1, liveOn: 1 })
+@index({ status: 1, expiresAt: 1 })
 @modelOptions({
   schemaOptions: { timestamps: true },
 })
@@ -43,8 +44,8 @@ export class Auction {
   @prop({ required: true })
   public liveOn!: Date;
 
-  @prop()
-  public expiresAt?: Date;
+  @prop({ default: null })
+  public expiresAt!: Date;
 
   // used string instead of  ref : ()=> Bid to avoid circular dependency
   @prop({ ref: 'Bid' })

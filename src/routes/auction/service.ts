@@ -1,7 +1,8 @@
 import { BadRequestError } from '@/middlewares/handleError';
 import { Auction, AuctionModel } from '@/models/auction.model';
-import { ProductCategoryEnum } from '@/models/product.model';
+import { Product, ProductCategoryEnum } from '@/models/product.model';
 import { IPagination } from '@/utils/handlePagination';
+import { generateSignedUrl } from '@/utils/s3Utils';
 import stringToObjectId from '@/utils/stringToObjectId';
 import mongoose, { QueryFilter, UpdateQuery } from 'mongoose';
 
@@ -16,6 +17,10 @@ interface IGetAllAuctionsServiceResponse {
   pagination: IPagination;
 }
 
+interface IAuctionWithProduct extends Omit<Auction, 'product'> {
+  product: Product;
+}
+
 export const getAllAuctions = async (
   page: number,
   limit: number,
@@ -24,7 +29,7 @@ export const getAllAuctions = async (
   status: string,
 ): Promise<IGetAllAuctionsServiceResponse> => {
   const skip = (page - 1) * limit;
-  const data = await AuctionModel.aggregate([
+  const output = await AuctionModel.aggregate([
     {
       $lookup: {
         from: 'products',
@@ -70,6 +75,46 @@ export const getAllAuctions = async (
               ],
             }
           : {}),
+      },
+    },
+    {
+      $lookup: {
+        from: 'bids',
+        localField: 'winningBid',
+        foreignField: '_id',
+        as: 'winningBid',
+        pipeline: [
+          {
+            $lookup: {
+              from: 'users',
+              localField: 'user',
+              foreignField: '_id',
+              as: 'user',
+            },
+          },
+          {
+            $unwind: {
+              path: '$user',
+            },
+          },
+          {
+            $project: {
+              'user.password': 0,
+              'user.role': 0,
+              'user.bidsBalance': 0,
+              'user.createdAt': 0,
+              'user.updatedAt': 0,
+              'user.favoriteProducts': 0,
+              'user.googleId': 0,
+            },
+          },
+        ],
+      },
+    },
+    {
+      $unwind: {
+        path: '$winningBid',
+        preserveNullAndEmptyArrays: true,
       },
     },
 
@@ -126,7 +171,25 @@ export const getAllAuctions = async (
     },
   ]).exec();
 
-  return data[0];
+  const auctions = await Promise.all(
+    (output[0]?.data ?? []).map(async (auction: IAuctionWithProduct) => {
+      const productImages = await Promise.all(
+        auction.product.productImages.map(async objectKey => {
+          return {
+            objectKey,
+            signedUrl: await generateSignedUrl(objectKey),
+          };
+        }),
+      );
+
+      return { ...auction, product: { ...auction.product, productImages } };
+    }),
+  );
+
+  return {
+    data: auctions,
+    pagination: output[0]?.pagination,
+  };
 };
 
 export const createAuction = (payload: ICreateAuctionPayload) => {
@@ -179,6 +242,20 @@ export const getSingleAuctionData = async (auctionId: string) => {
     {
       $lookup: {
         from: 'bids',
+        localField: 'winningBid',
+        foreignField: '_id',
+        as: 'winningBid',
+      },
+    },
+    {
+      $unwind: {
+        path: '$winningBid',
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $lookup: {
+        from: 'bids',
         localField: '_id',
         foreignField: 'auction',
         pipeline: [
@@ -217,7 +294,23 @@ export const getSingleAuctionData = async (auctionId: string) => {
     },
   ]).exec();
 
-  return data?.[0];
+  const auction: IAuctionWithProduct = data?.[0] ?? {};
+  const productImages = await Promise.all(
+    (auction?.product?.productImages ?? []).map(async (objectKey: string) => {
+      return {
+        objectKey,
+        signedUrl: await generateSignedUrl(objectKey),
+      };
+    }),
+  );
+
+  return {
+    ...auction,
+    product: {
+      ...(auction.product ?? {}),
+      productImages,
+    },
+  };
 };
 
 export const updateAuction = (find: QueryFilter<Auction>, update: UpdateQuery<Auction>) => {
