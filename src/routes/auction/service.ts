@@ -1,6 +1,8 @@
 import { BadRequestError } from '@/middlewares/handleError';
 import { Auction, AuctionModel } from '@/models/auction.model';
+import { Bid } from '@/models/bid.model';
 import { Product, ProductCategoryEnum } from '@/models/product.model';
+import { User } from '@/models/user.model';
 import { IPagination } from '@/utils/handlePagination';
 import { generateSignedUrl } from '@/utils/s3Utils';
 import stringToObjectId from '@/utils/stringToObjectId';
@@ -19,6 +21,13 @@ interface IGetAllAuctionsServiceResponse {
 
 interface IAuctionWithProduct extends Omit<Auction, 'product'> {
   product: Product;
+}
+
+interface IBidWithUser extends Omit<Bid, 'user'> {
+  user: User;
+}
+interface IAuctionWithProductAndBids extends IAuctionWithProduct {
+  bids: IBidWithUser[];
 }
 
 export const getAllAuctions = async (
@@ -294,7 +303,7 @@ export const getSingleAuctionData = async (auctionId: string) => {
     },
   ]).exec();
 
-  const auction: IAuctionWithProduct = data?.[0] ?? {};
+  const auction: IAuctionWithProductAndBids = data?.[0] ?? {};
   const productImages = await Promise.all(
     (auction?.product?.productImages ?? []).map(async (objectKey: string) => {
       return {
@@ -303,6 +312,17 @@ export const getSingleAuctionData = async (auctionId: string) => {
       };
     }),
   );
+
+  const bids = await Promise.all(
+    (auction?.bids ?? []).map(async bid => {
+      if (bid?.user?.profileImage) {
+        bid.user.profileImage = await generateSignedUrl(bid.user.profileImage);
+      }
+      return bid;
+    }),
+  );
+
+  auction.bids = bids;
 
   return {
     ...auction,

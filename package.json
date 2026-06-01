@@ -41,6 +41,7 @@
     "multer": "^2.1.1",
     "nanoid": "^5.1.11",
     "node-cron": "^4.2.1",
+    "razorpay": "^2.9.6",
     "socket.io": "^4.8.3",
     "swagger-ui-express": "^5.0.1",
     "winston": "^3.19.0"

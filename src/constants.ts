@@ -17,5 +17,7 @@ const constants = cleanEnv(process.env, {
   AWS_ACCESS_KEY_SECRET: str(),
   AWS_S3_BUCKET_REGION: str(),
   AWS_S3_BUCKET_NAME: str(),
+  RAZORPAY_KEY_ID: str(),
+  RAZORPAY_KEY_SECRET: str(),
 });
 export default constants;

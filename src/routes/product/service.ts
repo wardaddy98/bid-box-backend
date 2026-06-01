@@ -23,7 +23,7 @@ export const createProduct = async (
 };
 
 export const getProductById = (id: string) => {
-  return ProductModel.findById(stringToObjectId(id));
+  return ProductModel.findById(stringToObjectId(id)).lean();
 };
 
 export const getProductByProductId = (productId: string) => {

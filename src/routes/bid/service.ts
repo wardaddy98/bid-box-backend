@@ -1,6 +1,7 @@
 import { BadRequestError } from '@/middlewares/handleError';
 import { AuctionModel, AuctionStatusEnum } from '@/models/auction.model';
 import { BidModel } from '@/models/bid.model';
+import { BidPack, BidPackModel } from '@/models/bidPacks.model';
 import { UserModel } from '@/models/user.model';
 import handleTransaction from '@/utils/handleTransaction';
 import mongoose, { ClientSession } from 'mongoose';
@@ -123,4 +124,16 @@ export const createBidTransaction = (
     };
   });
   return result;
+};
+
+export const createBidPack = async (payload: BidPack) => {
+  return (await BidPackModel.create(payload)).toObject();
+};
+
+export const getBidPacks = async () => {
+  return BidPackModel.find({}).lean();
+};
+
+export const getBidPackById = async (_id: string) => {
+  return BidPackModel.findOne({ _id }).lean();
 };

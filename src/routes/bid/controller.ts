@@ -1,10 +1,11 @@
 import { AuctionSocketEvents } from '@/socket/listeners/auction.listeners';
 import { getIO } from '@/socket/socket';
 import { handleResponse } from '@/utils/handleResponse';
+import { generateSignedUrl } from '@/utils/s3Utils';
 import { RequestWithUser } from '@/utils/token';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import mongoose from 'mongoose';
-import { createBidTransaction } from './service';
+import { createBidPack, createBidTransaction, getBidPacks } from './service';
 
 interface IPlaceBidPayload {
   amount: number;
@@ -34,7 +35,9 @@ export const handlePlaceBid = async (req: IPlaceBidReq, res: Response) => {
   const bidderUserData = {
     email: updatedUser?.email,
     name: updatedUser?.name,
-    profileImage: updatedUser?.profileImage,
+    profileImage: updatedUser?.profileImage
+      ? await generateSignedUrl(updatedUser?.profileImage)
+      : '',
   };
 
   //new bid and updated expiresAt and bidder user is emitted to all users in the room of current auction
@@ -57,6 +60,22 @@ export const handlePlaceBid = async (req: IPlaceBidReq, res: Response) => {
         bidsBalance: updatedUser?.bidsBalance,
       },
     },
+  });
+};
+
+export const handleCreateBidPack = async (req: Request, res: Response) => {
+  const bidPack = await createBidPack(req.body);
+
+  return handleResponse(res, 200, 'Bid pack created', {
+    data: bidPack,
+  });
+};
+
+export const handleGetBidPacks = async (req: Request, res: Response) => {
+  const bidPacks = await getBidPacks();
+
+  return handleResponse(res, 200, '', {
+    data: bidPacks,
   });
 };
 
