@@ -360,7 +360,7 @@ export const createAuctionTransaction = async (
     );
 
     return {
-      auction: auction.toObject(),
+      ...auction.toObject(),
       product,
     };
   });
