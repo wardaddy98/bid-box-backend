@@ -11,6 +11,7 @@ import {
   editAuction,
   getAllAuctions,
   getSingleAuctionData,
+  getWinners,
 } from './service';
 
 interface IGetAllAuctionsQuery extends GetAllQuery {
@@ -85,5 +86,13 @@ export const handleGetSingleAuction = async (req: Request, res: Response) => {
 
   return handleResponse(res, 200, '', {
     data: auction,
+  });
+};
+
+export const handleGetWinners = async (req: Request, res: Response) => {
+  const winners = await getWinners();
+
+  return handleResponse(res, 200, '', {
+    data: winners,
   });
 };

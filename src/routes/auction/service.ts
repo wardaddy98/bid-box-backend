@@ -33,6 +33,13 @@ interface IAuctionWithProductAndBids extends IAuctionWithProduct {
   bids: IBidWithUser[];
 }
 
+interface IAuctionWithProductAndBidsAndWinningBid extends Omit<
+  IAuctionWithProductAndBids,
+  'winningBid'
+> {
+  winningBid: IBidWithUser;
+}
+
 export const getAllAuctions = async (
   page: number,
   limit: number,
@@ -427,4 +434,145 @@ export const expireAuctionTransaction = async () => {
 
     return expiredAuctions;
   });
+};
+
+export const getWinners = async () => {
+  const auctions = await AuctionModel.aggregate([
+    {
+      $match: {
+        status: AuctionStatusEnum.Completed,
+      },
+    },
+    {
+      $lookup: {
+        from: 'products',
+        localField: 'product',
+        foreignField: '_id',
+        as: 'product',
+      },
+    },
+
+    {
+      $unwind: {
+        path: '$product',
+      },
+    },
+    {
+      $lookup: {
+        from: 'bids',
+        localField: 'winningBid',
+        foreignField: '_id',
+        pipeline: [
+          {
+            $lookup: {
+              from: 'users',
+              localField: 'user',
+              foreignField: '_id',
+              as: 'user',
+            },
+          },
+          {
+            $unwind: {
+              path: '$user',
+            },
+          },
+          {
+            $project: {
+              'user.password': 0,
+              'user.bidsBalance': 0,
+              'user.favoriteAuctions': 0,
+              'user.role': 0,
+              'user.googleId': 0,
+              'user.createdAt': 0,
+              'user.updatedAt': 0,
+            },
+          },
+        ],
+        as: 'winningBid',
+      },
+    },
+    {
+      $unwind: {
+        path: '$winningBid',
+      },
+    },
+    {
+      $lookup: {
+        from: 'bids',
+        localField: '_id',
+        foreignField: 'auction',
+        pipeline: [
+          {
+            $lookup: {
+              from: 'users',
+              localField: 'user',
+              foreignField: '_id',
+              as: 'user',
+            },
+          },
+          {
+            $unwind: '$user',
+          },
+
+          {
+            $project: {
+              'user.password': 0,
+              'user.bidsBalance': 0,
+              'user.favoriteAuctions': 0,
+              'user.role': 0,
+              'user.googleId': 0,
+              'user.createdAt': 0,
+              'user.updatedAt': 0,
+            },
+          },
+          {
+            $sort: {
+              createdAt: -1,
+            },
+          },
+        ],
+
+        as: 'bids',
+      },
+    },
+    {
+      $sort: {
+        createdAt: -1,
+      },
+    },
+    {
+      $limit: 10,
+    },
+  ]).exec();
+
+  const data = await Promise.all(
+    auctions.map(async (auction: IAuctionWithProductAndBidsAndWinningBid) => {
+      const productImages = await Promise.all(
+        (auction?.product?.productImages ?? []).map(async (objectKey: string) => {
+          return {
+            objectKey,
+            signedUrl: await generateSignedUrl(objectKey),
+          };
+        }),
+      );
+
+      let auctionWinnerProfileImage = '';
+      if (auction.winningBid.user.profileImage) {
+        auctionWinnerProfileImage = await generateSignedUrl(
+          auction.winningBid.user.profileImage as string,
+        );
+      }
+
+      return {
+        ...auction,
+        winningBid: {
+          ...auction.winningBid,
+          user: { ...auction.winningBid.user, profileImage: auctionWinnerProfileImage },
+        },
+        product: { ...auction.product, productImages },
+      };
+    }),
+  );
+
+  return data;
 };

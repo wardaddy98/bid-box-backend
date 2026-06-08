@@ -13,6 +13,7 @@ import {
   handleEditAuction,
   handleGetAllAuctions,
   handleGetSingleAuction,
+  handleGetWinners,
 } from './controller';
 
 const router = express.Router();
@@ -21,6 +22,8 @@ router
   .route('/')
   .get(isLoggedIn, validateQueryString(getAllAuctionsQuerySchema), handleGetAllAuctions)
   .post(isLoggedIn, isAdmin, validateSchema(createAuctionSchema), handleCreateAuction);
+
+router.route('/winners').get(isLoggedIn, handleGetWinners);
 
 router
   .route('/:auctionId')
