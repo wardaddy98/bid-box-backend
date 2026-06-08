@@ -73,8 +73,9 @@ export const createBidTransaction = (
 
     const previousBidByUser = await getPreviousBidByUser(auction._id, userObjectId, session);
 
+    //if user has placed a bid before base bid amount should be deducted from the highest bid
     const bidsUsedInThisRequest = previousBidByUser
-      ? bidAmount - Number(previousBidByUser?.amount || 0)
+      ? bidAmount - Number(highestBid?.amount || 0)
       : bidAmount;
 
     if (userBidBalance < bidsUsedInThisRequest) {

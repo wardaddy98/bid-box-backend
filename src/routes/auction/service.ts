@@ -1,9 +1,10 @@
 import { BadRequestError } from '@/middlewares/handleError';
 import { Auction, AuctionModel } from '@/models/auction.model';
 import { Bid } from '@/models/bid.model';
-import { Product, ProductCategoryEnum } from '@/models/product.model';
+import { Product, ProductCategoryEnum, ProductModel } from '@/models/product.model';
 import { User } from '@/models/user.model';
 import { IPagination } from '@/utils/handlePagination';
+import handleTransaction from '@/utils/handleTransaction';
 import { generateSignedUrl } from '@/utils/s3Utils';
 import stringToObjectId from '@/utils/stringToObjectId';
 import mongoose, { QueryFilter, UpdateQuery } from 'mongoose';
@@ -19,7 +20,7 @@ interface IGetAllAuctionsServiceResponse {
   pagination: IPagination;
 }
 
-interface IAuctionWithProduct extends Omit<Auction, 'product'> {
+export interface IAuctionWithProduct extends Omit<Auction, 'product'> {
   product: Product;
 }
 
@@ -224,7 +225,7 @@ export const getAuctionById = (id: string) => {
 };
 
 export const getAuctionByAuctionId = (auctionId: string) => {
-  return AuctionModel.findOne({ auctionId });
+  return AuctionModel.findOne({ auctionId }).lean();
 };
 
 export const getSingleAuctionData = async (auctionId: string) => {
@@ -335,4 +336,32 @@ export const getSingleAuctionData = async (auctionId: string) => {
 
 export const updateAuction = (find: QueryFilter<Auction>, update: UpdateQuery<Auction>) => {
   return AuctionModel.updateOne(find, update);
+};
+
+export const createAuctionTransaction = async (
+  payload: ICreateAuctionPayload,
+  productObjectId: string,
+) => {
+  return handleTransaction(async session => {
+    const [auction] = await AuctionModel.create([payload], { session });
+
+    const product = await ProductModel.findByIdAndUpdate(
+      productObjectId,
+      {
+        $inc: {
+          availableStock: -1,
+        },
+      },
+      {
+        session,
+        returnDocument: 'after',
+        lean: true,
+      },
+    );
+
+    return {
+      auction: auction.toObject(),
+      product,
+    };
+  });
 };

@@ -1,5 +1,6 @@
 import { BadRequestError } from '@/middlewares/handleError';
 import { IRequestWithUser } from '@/middlewares/isAdmin';
+import { AuctionStatusEnum } from '@/models/auction.model';
 import { OrderTypeEnum } from '@/models/order.model';
 import { generateOrderId } from '@/utils/commonUtils';
 import createRazorPayInstance from '@/utils/createRazorPayInstance';
@@ -9,10 +10,12 @@ import stringToObjectId from '@/utils/stringToObjectId';
 import { Request, Response } from 'express';
 import _ from 'lodash';
 import mongoose from 'mongoose';
+import { getAuctionByAuctionId } from '../auction/service';
 import { getBidPackById } from '../bid/service';
-import { getProductById } from '../product/service';
+import { getProductById, getProductByProductId } from '../product/service';
 import {
   bidPackPurchaseSuccessFullTransaction,
+  createDirectPurchaseOrder,
   createOrder,
   getOrderByRazorPayId,
   updatePaymentFailure,
@@ -144,5 +147,35 @@ export const handlePaymentFailure = async (req: Request, res: Response) => {
 
   return handleResponse(res, 200, '', {
     data: {},
+  });
+};
+
+export const handleCreateDirectPurchaseOrder = async (req: IRequestWithUser, res: Response) => {
+  const productId = req.body.productId;
+  const auctionId = req.body.auctionId;
+  const userObjectId = req?.user?._id as mongoose.Types.ObjectId;
+
+  if (auctionId) {
+    const auction = await getAuctionByAuctionId(auctionId);
+
+    if (_.isEmpty(auction)) {
+      throw new BadRequestError('Invalid auction!');
+    }
+
+    if (auction?.status !== AuctionStatusEnum.Live) {
+      throw new BadRequestError('Auction has ended. Bids placed cannot be refunded!');
+    }
+  }
+
+  const product = await getProductByProductId(productId);
+
+  if (_.isEmpty(product)) {
+    throw new BadRequestError('Invalid product!');
+  }
+
+  const data = await createDirectPurchaseOrder(userObjectId, product, req.body.netDeduction);
+
+  return handleResponse(res, 200, 'Purchase successful', {
+    data,
   });
 };

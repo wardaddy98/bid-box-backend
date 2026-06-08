@@ -1,17 +1,30 @@
 import { AuctionModel, AuctionStatusEnum } from '@/models/auction.model';
+import { ProductModel } from '@/models/product.model';
+import { IAuctionWithProduct } from '@/routes/auction/service';
 import { AuctionSocketEvents } from '@/socket/listeners/auction.listeners';
 import { getIO } from '@/socket/socket';
+import { generateSignedUrl } from '@/utils/s3Utils';
+import mongoose from 'mongoose';
 import cron from 'node-cron';
 
 export const initializeAuctionCron = () => {
   //to check if any auction has become live every 15 min
   cron.schedule('*/15 * * * *', async () => {
     const now = new Date();
+
+    const liveAuctions = await AuctionModel.find({
+      status: AuctionStatusEnum.Pending,
+      liveOn: {
+        $lte: now,
+      },
+    });
+
+    if (!liveAuctions.length) return;
+
     await AuctionModel.updateMany(
       {
-        status: AuctionStatusEnum.Pending,
-        liveOn: {
-          $lte: now,
+        _id: {
+          $in: liveAuctions?.map(e => e._id),
         },
       },
       {
@@ -49,7 +62,22 @@ export const initializeAuctionCron = () => {
         },
       ]).exec();
 
-      io.emit(AuctionSocketEvents.UPDATE_LIVE_AUCTIONS, { data });
+      const auctions = await Promise.all(
+        (data ?? []).map(async (auction: IAuctionWithProduct) => {
+          const productImages = await Promise.all(
+            auction.product.productImages.map(async (objectKey: string) => {
+              return {
+                objectKey,
+                signedUrl: await generateSignedUrl(objectKey),
+              };
+            }),
+          );
+
+          return { ...auction, product: { ...auction.product, productImages } };
+        }),
+      );
+
+      io.emit(AuctionSocketEvents.UPDATE_LIVE_AUCTIONS, { data: auctions });
     }
   });
 
@@ -121,6 +149,20 @@ export const initializeAuctionCron = () => {
       {
         $set: {
           status: AuctionStatusEnum.Cancelled,
+        },
+      },
+    );
+
+    // increment stock by 1 for product if auction is cancelled
+    await ProductModel.updateMany(
+      {
+        _id: {
+          $in: cancelledAuctions.map(e => e.product as mongoose.Types.ObjectId),
+        },
+      },
+      {
+        $inc: {
+          availableStock: 1,
         },
       },
     );

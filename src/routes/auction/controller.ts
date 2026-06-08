@@ -2,11 +2,15 @@ import { BadRequestError } from '@/middlewares/handleError';
 import { AuctionStatusEnum } from '@/models/auction.model';
 import { GetAllQuery } from '@/types/common';
 import { handleResponse } from '@/utils/handleResponse';
-import { generateSignedUrl } from '@/utils/s3Utils';
 import { Request, Response } from 'express';
 import _ from 'lodash';
 import { getProductById } from '../product/service';
-import { createAuction, editAuction, getAllAuctions, getSingleAuctionData } from './service';
+import {
+  createAuctionTransaction,
+  editAuction,
+  getAllAuctions,
+  getSingleAuctionData,
+} from './service';
 
 interface IGetAllAuctionsQuery extends GetAllQuery {
   status?: AuctionStatusEnum;
@@ -30,23 +34,18 @@ export const handleCreateAuction = async (req: Request, res: Response) => {
 
   const product = await getProductById(req.body?.product).lean();
 
-  const productImages = await Promise.all(
-    (product?.productImages ?? []).map(async objectKey => {
-      return {
-        objectKey,
-        signedUrl: await generateSignedUrl(objectKey),
-      };
-    }),
-  );
-
   if (_.isEmpty(product)) {
     throw new BadRequestError('Product does not exist!');
   }
 
-  const auction = await createAuction(payload);
+  if (product.availableStock <= 0) {
+    throw new BadRequestError('Product stock does not exist!');
+  }
+
+  const data = await createAuctionTransaction(payload, req.body?.product);
 
   return handleResponse(res, 200, 'Auction listed successfully!', {
-    data: { ...auction.toObject(), product: { ...product, productImages } },
+    data,
   });
 };
 

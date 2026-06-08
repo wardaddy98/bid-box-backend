@@ -130,7 +130,7 @@ export const handleRefreshController = async (req: Request, res: Response) => {
     }
 
     //to check if user in refresh token received in client is same as refresh token saved in DB
-    if (user._id !== tokenDataFromDB.user) {
+    if (!user._id.equals(tokenDataFromDB.user as mongoose.Types.ObjectId)) {
       throw new ForbiddenError('Invalid Refresh Token');
     }
 

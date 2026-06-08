@@ -1,8 +1,10 @@
 import { InternalServerError } from '@/middlewares/handleError';
-import { Order, OrderModel } from '@/models/order.model';
+import { Order, OrderModel, OrderTypeEnum } from '@/models/order.model';
+import { Product, ProductModel } from '@/models/product.model';
 import { UserModel } from '@/models/user.model';
+import { generateOrderId } from '@/utils/commonUtils';
 import handleTransaction from '@/utils/handleTransaction';
-import mongoose from 'mongoose';
+import mongoose, { ClientSession } from 'mongoose';
 import { OrderPaymentStatusEnum } from '../../models/order.model';
 
 export const getOrderByRazorPayId = async (razorPayOrderId: string) => {
@@ -29,9 +31,7 @@ export const bidPackPurchaseSuccessFullTransaction = async (
       ).lean();
 
       await OrderModel.findByIdAndUpdate(
-        {
-          _id: orderObjectId,
-        },
+        orderObjectId,
         {
           $set: {
             paymentStatus: OrderPaymentStatusEnum.Success,
@@ -66,4 +66,61 @@ export const updatePaymentFailure = async (orderId: string) => {
       },
     },
   );
+};
+
+export const createDirectPurchaseOrder = async (
+  user: mongoose.Types.ObjectId,
+  product: Product,
+  netDeduction: number,
+) => {
+  return handleTransaction(async (session: ClientSession) => {
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      user,
+      {
+        $inc: {
+          bidsBalance: -netDeduction,
+        },
+      },
+      {
+        returnDocument: 'after',
+        lean: true,
+        session,
+      },
+    );
+
+    await OrderModel.create(
+      [
+        {
+          user: user,
+          amount: Number(product?.sellingPrice ?? 0) * 100,
+          orderId: generateOrderId(),
+          product: product._id,
+          orderType: OrderTypeEnum.Product,
+          paymentStatus: OrderPaymentStatusEnum.Success,
+        },
+      ],
+      {
+        session,
+      },
+    );
+
+    const updatedProduct = await ProductModel.findByIdAndUpdate(
+      product._id,
+      {
+        $inc: {
+          availableStock: -1,
+        },
+      },
+      {
+        returnDocument: 'after',
+        lean: true,
+        session,
+      },
+    );
+
+    return {
+      bidsBalance: updatedUser?.bidsBalance ?? 0,
+      availableStock: updatedProduct?.availableStock ?? 0,
+    };
+  });
 };

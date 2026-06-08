@@ -33,6 +33,7 @@ export const handlePlaceBid = async (req: IPlaceBidReq, res: Response) => {
   );
 
   const bidderUserData = {
+    _id: updatedUser?._id,
     email: updatedUser?.email,
     name: updatedUser?.name,
     profileImage: updatedUser?.profileImage

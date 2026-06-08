@@ -1,8 +1,13 @@
 import isLoggedIn from '@/middlewares/isLoggedIn';
 import validateSchema from '@/middlewares/validateSchema';
-import { paymentFailureSchema, verifyPaymentSchema } from '@/validations/payment.validation';
+import {
+  createDirectPurchaseOrderSchema,
+  paymentFailureSchema,
+  verifyPaymentSchema,
+} from '@/validations/order.validation';
 import express from 'express';
 import {
+  handleCreateDirectPurchaseOrder,
   handleCreateRazorPayOrder,
   handlePaymentFailure,
   handleVerifyRazorPayPayment,
@@ -10,7 +15,15 @@ import {
 
 const router = express.Router();
 
-router.route('/').post(isLoggedIn, handleCreateRazorPayOrder);
+router.route('/').post(isLoggedIn, handleCreateRazorPayOrder, handleCreateDirectPurchaseOrder);
+
+router
+  .route('/product')
+  .post(
+    isLoggedIn,
+    validateSchema(createDirectPurchaseOrderSchema),
+    handleCreateDirectPurchaseOrder,
+  );
 
 router
   .route('/verify')

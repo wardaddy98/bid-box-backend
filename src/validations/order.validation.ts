@@ -9,3 +9,9 @@ export const verifyPaymentSchema = Joi.object({
 export const paymentFailureSchema = Joi.object({
   orderId: Joi.string().required(),
 });
+
+export const createDirectPurchaseOrderSchema = Joi.object({
+  productId: Joi.string().required(),
+  auctionId: Joi.string().min(0).optional(),
+  netDeduction: Joi.number().integer().required(),
+});
