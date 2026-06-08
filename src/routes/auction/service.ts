@@ -1,13 +1,15 @@
 import { BadRequestError } from '@/middlewares/handleError';
-import { Auction, AuctionModel } from '@/models/auction.model';
-import { Bid } from '@/models/bid.model';
+import { Auction, AuctionModel, AuctionStatusEnum } from '@/models/auction.model';
+import { Bid, BidModel } from '@/models/bid.model';
+import { OrderModel, OrderPaymentStatusEnum, OrderTypeEnum } from '@/models/order.model';
 import { Product, ProductCategoryEnum, ProductModel } from '@/models/product.model';
 import { User } from '@/models/user.model';
+import { generateOrderId } from '@/utils/commonUtils';
 import { IPagination } from '@/utils/handlePagination';
 import handleTransaction from '@/utils/handleTransaction';
 import { generateSignedUrl } from '@/utils/s3Utils';
 import stringToObjectId from '@/utils/stringToObjectId';
-import mongoose, { QueryFilter, UpdateQuery } from 'mongoose';
+import mongoose, { ClientSession, QueryFilter, UpdateQuery } from 'mongoose';
 
 interface ICreateAuctionPayload {
   product: mongoose.Types.ObjectId;
@@ -363,5 +365,66 @@ export const createAuctionTransaction = async (
       ...auction.toObject(),
       product,
     };
+  });
+};
+
+export const expireAuctionTransaction = async () => {
+  return handleTransaction(async (session: ClientSession) => {
+    const expiredAuctions = await AuctionModel.find({
+      status: AuctionStatusEnum.Live,
+      expiresAt: {
+        $ne: null,
+        $lte: new Date(),
+      },
+    })
+      .session(session)
+      .lean();
+
+    if (!expiredAuctions?.length) return [];
+
+    await AuctionModel.updateMany(
+      {
+        _id: {
+          $in: expiredAuctions?.map(e => e._id),
+        },
+      },
+      {
+        $set: {
+          expiresAt: null,
+          status: AuctionStatusEnum.Completed,
+        },
+      },
+      {
+        session,
+      },
+    );
+
+    await Promise.all(
+      expiredAuctions.map(async auction => {
+        const winningBid = await BidModel.findOne({
+          _id: auction.winningBid as mongoose.Types.ObjectId,
+        })
+          .session(session)
+          .lean();
+
+        await OrderModel.create(
+          [
+            {
+              orderId: generateOrderId(),
+              amount: Number(winningBid?.amount ?? 0) * 100,
+              auction: auction._id,
+              orderType: OrderTypeEnum.Auction,
+              user: winningBid?.user,
+              paymentStatus: OrderPaymentStatusEnum.Success,
+            },
+          ],
+          {
+            session,
+          },
+        );
+      }),
+    );
+
+    return expiredAuctions;
   });
 };

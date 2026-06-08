@@ -1,6 +1,6 @@
 import { AuctionModel, AuctionStatusEnum } from '@/models/auction.model';
 import { ProductModel } from '@/models/product.model';
-import { IAuctionWithProduct } from '@/routes/auction/service';
+import { expireAuctionTransaction, IAuctionWithProduct } from '@/routes/auction/service';
 import { AuctionSocketEvents } from '@/socket/listeners/auction.listeners';
 import { getIO } from '@/socket/socket';
 import { generateSignedUrl } from '@/utils/s3Utils';
@@ -86,29 +86,9 @@ export const initializeAuctionCron = () => {
     const io = getIO();
     if (!io) return;
 
-    const expiredAuctions = await AuctionModel.find({
-      status: AuctionStatusEnum.Live,
-      expiresAt: {
-        $ne: null,
-        $lte: new Date(),
-      },
-    }).lean();
+    const expiredAuctions = await expireAuctionTransaction();
 
     if (!expiredAuctions?.length) return;
-
-    await AuctionModel.updateMany(
-      {
-        _id: {
-          $in: expiredAuctions?.map(e => e._id),
-        },
-      },
-      {
-        $set: {
-          expiresAt: null,
-          status: AuctionStatusEnum.Completed,
-        },
-      },
-    );
 
     io.emit(AuctionSocketEvents.UPDATE_EXPIRED_AUCTIONS, {
       data: expiredAuctions,
