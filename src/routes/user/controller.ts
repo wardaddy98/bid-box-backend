@@ -6,9 +6,15 @@ import {
   InternalServerError,
 } from '@/middlewares/handleError';
 import { User, UserRole } from '@/models/user.model';
+import { verifyGoogleToken } from '@/utils/googleOAuthUtils';
 import { handleResponse } from '@/utils/handleResponse';
 import { checkPasswordValid } from '@/utils/hashing';
-import { deleteFile, generateSignedUrl, uploadFile } from '@/utils/s3Utils';
+import {
+  deleteFile,
+  generateSignedUrl,
+  uploadFile,
+  uploadGooglePictureToS3Bucket,
+} from '@/utils/s3Utils';
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -19,17 +25,19 @@ import {
 import { Request, Response } from 'express';
 import jwt, { JsonWebTokenError } from 'jsonwebtoken';
 import _ from 'lodash';
-import mongoose from 'mongoose';
+import mongoose, { UpdateQuery } from 'mongoose';
 import 'multer';
 import { nanoid } from 'nanoid';
 import { getAuctionByAuctionId } from '../auction/service';
 import {
   addBookmark,
   createUser,
+  createUserWithoutPassword,
   findRefreshToken,
   findUserByEmail,
   findUserById,
   removeBookmark,
+  updateUserById,
 } from './service';
 
 export const handleRegisterController = async (req: Request, res: Response) => {
@@ -88,7 +96,7 @@ export const handleLoginController = async (req: Request, res: Response) => {
     userId: user._id,
   };
 
-  const isPasswordValid = await checkPasswordValid(req?.body?.password, user.password);
+  const isPasswordValid = await checkPasswordValid(req?.body?.password, user?.password ?? '');
   if (!isPasswordValid) throw new BadRequestError('Incorrect Password!');
 
   const token = generateAccessToken(tokenData, { expiresIn: '15m' });
@@ -183,4 +191,83 @@ export const handleRemoveBookmark = async (req: RequestWithUser, res: Response) 
 
   const user = await removeBookmark(auction._id, req?.user?._id as mongoose.Types.ObjectId);
   return handleResponse(res, 200, 'Auction removed from favorite', { data: user });
+};
+
+export const handleGoogleAuth = async (req: Request, res: Response) => {
+  const tokenPayload = await verifyGoogleToken(req?.body?.credential ?? '');
+
+  //will be used to generate access and refresh token
+  let finalUserData;
+
+  const existingUser = await findUserByEmail(tokenPayload.email as string);
+
+  if (existingUser) {
+    let updateQuery: UpdateQuery<User> = {};
+
+    if (!existingUser?.googleId) {
+      //set googleId if missing
+      updateQuery = {
+        $set: {
+          googleId: tokenPayload.sub,
+        },
+      };
+    }
+
+    if (!existingUser?.profileImage && tokenPayload?.picture) {
+      //if no profileImage, download google picture if available and set in user
+      const uploadedPictureObjectKey = await uploadGooglePictureToS3Bucket(tokenPayload.picture);
+
+      if (uploadedPictureObjectKey) {
+        updateQuery = {
+          ...updateQuery,
+          $set: { ...(updateQuery?.$set ?? {}), profileImage: uploadedPictureObjectKey },
+        };
+      }
+    }
+
+    if (!_.isEmpty(updateQuery)) {
+      finalUserData = await updateUserById(existingUser._id, updateQuery);
+    } else {
+      //when no update is required token will be generated from existing user data
+      finalUserData = existingUser;
+    }
+  } else {
+    let profileImage = '';
+    if (tokenPayload?.picture) {
+      profileImage = await uploadGooglePictureToS3Bucket(tokenPayload.picture);
+    }
+
+    finalUserData = await createUserWithoutPassword({
+      name: tokenPayload.name ?? '',
+      email: tokenPayload.email ?? '',
+      role: UserRole.Customer,
+      profileImage,
+      googleId: tokenPayload.sub,
+    });
+  }
+
+  //generate access and refresh token from finalUserData
+
+  const tokenData: TokenCreationData = {
+    email: finalUserData?.email as string,
+    role: finalUserData?.role as UserRole,
+    userId: finalUserData?._id as mongoose.Types.ObjectId,
+  };
+
+  const token = generateAccessToken(tokenData, { expiresIn: '15m' });
+  await generateRefreshToken(tokenData, { expiresIn: '7d' }, res);
+
+  let profileImageSignedUrl;
+  if (finalUserData?.profileImage) {
+    profileImageSignedUrl = await generateSignedUrl(finalUserData.profileImage);
+  }
+
+  const userResponse: Partial<User> = _.cloneDeep(finalUserData ?? {});
+  if (userResponse?.password) {
+    delete userResponse.password;
+  }
+  return handleResponse(res, 200, 'User created successfully', {
+    user: { ...userResponse, profileImage: profileImageSignedUrl },
+    token,
+  });
 };

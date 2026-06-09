@@ -19,5 +19,6 @@ const constants = cleanEnv(process.env, {
   AWS_S3_BUCKET_NAME: str(),
   RAZORPAY_KEY_ID: str(),
   RAZORPAY_KEY_SECRET: str(),
+  GOOGLE_OAUTH_CLIENT_ID: str(),
 });
 export default constants;

@@ -4,7 +4,7 @@ import { User, UserModel } from '@/models/user.model';
 import { generateHash } from '@/utils/hashing';
 import { DecodedTokenData } from '@/utils/token';
 import _ from 'lodash';
-import mongoose from 'mongoose';
+import mongoose, { UpdateQuery } from 'mongoose';
 
 export const createUser = async (payload: User): Promise<User> => {
   const existingUser = await UserModel.find({ email: payload.email }).lean();
@@ -12,7 +12,7 @@ export const createUser = async (payload: User): Promise<User> => {
   if (!_.isEmpty(existingUser)) {
     throw new BadRequestError('User with this email already exists!');
   }
-  const hash = await generateHash(payload.password);
+  const hash = await generateHash(payload?.password ?? '');
   return (await UserModel.create({ ...payload, password: hash })).toObject();
 };
 
@@ -63,4 +63,15 @@ export const removeBookmark = (auction: mongoose.Types.ObjectId, user: mongoose.
       returnDocument: 'after',
     },
   );
+};
+
+export const updateUserById = (
+  userObjectId: mongoose.Types.ObjectId,
+  update: UpdateQuery<User>,
+) => {
+  return UserModel.findByIdAndUpdate(userObjectId, update, { returnDocument: 'after', lean: true });
+};
+
+export const createUserWithoutPassword = async (payload: Omit<User, '_id'>) => {
+  return (await UserModel.create(payload)).toObject();
 };

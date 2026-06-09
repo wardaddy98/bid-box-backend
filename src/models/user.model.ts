@@ -19,8 +19,8 @@ export class User {
   @prop({ required: true, unique: true, immutable: true, lowercase: true })
   public email!: string;
 
-  @prop({ required: true })
-  public password!: string;
+  @prop()
+  public password?: string;
 
   @prop({ enum: UserRole, required: true })
   public role!: UserRole;

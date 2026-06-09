@@ -21,3 +21,7 @@ export const loginUserSchema = Joi.object({
 export const bookmarkSchema = Joi.object({
   auctionId: Joi.string().required(),
 });
+
+export const googleAuthSchema = Joi.object({
+  credential: Joi.string().required(),
+});

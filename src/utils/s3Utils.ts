@@ -74,3 +74,32 @@ export const deleteFile = async (objectKey: string) => {
     }),
   );
 };
+
+export const uploadGooglePictureToS3Bucket = async (pictureUrl: string): Promise<string> => {
+  try {
+    //download image
+    const response = await fetch(pictureUrl);
+
+    if (!response.ok) {
+      return '';
+    }
+
+    //convert to buffer
+    const imageBuffer = Buffer.from(await response.arrayBuffer());
+
+    const objectKey = `profile/${Date.now()}-${nanoid()}`;
+
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: constants.AWS_S3_BUCKET_NAME,
+        Key: objectKey,
+        Body: imageBuffer,
+        ContentType: response.headers.get('content-type') ?? 'image/jpeg',
+      }),
+    );
+
+    return objectKey;
+  } catch (err) {
+    return '';
+  }
+};

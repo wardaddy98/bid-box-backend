@@ -1,10 +1,16 @@
 import isLoggedIn from '@/middlewares/isLoggedIn';
 import upload from '@/middlewares/upload';
 import validateSchema from '@/middlewares/validateSchema';
-import { bookmarkSchema, createUserSchema, loginUserSchema } from '@/validations/user.validation';
+import {
+  bookmarkSchema,
+  createUserSchema,
+  googleAuthSchema,
+  loginUserSchema,
+} from '@/validations/user.validation';
 import express from 'express';
 import {
   handleAddBookmark,
+  handleGoogleAuth,
   handleLoginController,
   handleRefreshController,
   handleRegisterController,
@@ -25,5 +31,7 @@ router
 router.route('/login').post(validateSchema(loginUserSchema), handleLoginController);
 
 router.route('/refresh').get(handleRefreshController);
+
+router.route('/google-auth').post(validateSchema(googleAuthSchema), handleGoogleAuth);
 
 export default router;
