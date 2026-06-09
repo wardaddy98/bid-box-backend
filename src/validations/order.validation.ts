@@ -1,3 +1,4 @@
+import { OrderPaymentStatusEnum } from '@/models/order.model';
 import Joi from 'joi';
 
 export const verifyPaymentSchema = Joi.object({
@@ -14,4 +15,11 @@ export const createDirectPurchaseOrderSchema = Joi.object({
   productId: Joi.string().required(),
   auctionId: Joi.string().min(0).optional(),
   netDeduction: Joi.number().integer().required(),
+});
+
+export const getAllOrdersQuerySchema = Joi.object({
+  paymentStatus: Joi.string()
+    .valid(...Object.values(OrderPaymentStatusEnum), 'all')
+    .optional(),
+  search: Joi.string().optional().allow(''),
 });

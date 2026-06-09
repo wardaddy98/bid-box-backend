@@ -124,3 +124,84 @@ export const createDirectPurchaseOrder = async (
     };
   });
 };
+
+export const getAllOrders = async (
+  userObjectId: mongoose.Types.ObjectId,
+  paymentStatus?: OrderPaymentStatusEnum | 'all',
+  search?: string,
+) => {
+  return OrderModel.aggregate([
+    {
+      $match: {
+        user: userObjectId,
+        ...(paymentStatus === 'all' ? {} : { paymentStatus }),
+        ...(search ? { orderId: { $regex: search, $options: 'i' } } : {}),
+      },
+    },
+
+    {
+      $lookup: {
+        from: 'products',
+        localField: 'product',
+        foreignField: '_id',
+        as: 'product',
+      },
+    },
+    {
+      $unwind: {
+        path: '$product',
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $lookup: {
+        from: 'auctions',
+        localField: 'auction',
+        foreignField: '_id',
+        pipeline: [
+          {
+            $lookup: {
+              from: 'products',
+              localField: 'product',
+              foreignField: '_id',
+              as: 'product',
+            },
+          },
+
+          {
+            $unwind: {
+              path: '$product',
+            },
+          },
+        ],
+
+        as: 'auction',
+      },
+    },
+    {
+      $unwind: {
+        path: '$auction',
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $lookup: {
+        from: 'bidpacks',
+        localField: 'bidPack',
+        foreignField: '_id',
+        as: 'bidPack',
+      },
+    },
+    {
+      $unwind: {
+        path: '$bidPack',
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $sort: {
+        createdAt: -1,
+      },
+    },
+  ]).exec();
+};

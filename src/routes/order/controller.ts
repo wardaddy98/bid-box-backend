@@ -1,7 +1,7 @@
 import { BadRequestError } from '@/middlewares/handleError';
 import { IRequestWithUser } from '@/middlewares/isAdmin';
 import { AuctionStatusEnum } from '@/models/auction.model';
-import { OrderTypeEnum } from '@/models/order.model';
+import { OrderPaymentStatusEnum, OrderTypeEnum } from '@/models/order.model';
 import { generateOrderId } from '@/utils/commonUtils';
 import createRazorPayInstance from '@/utils/createRazorPayInstance';
 import { handleResponse } from '@/utils/handleResponse';
@@ -17,6 +17,7 @@ import {
   bidPackPurchaseSuccessFullTransaction,
   createDirectPurchaseOrder,
   createOrder,
+  getAllOrders,
   getOrderByRazorPayId,
   updatePaymentFailure,
 } from './service';
@@ -40,6 +41,11 @@ export interface IRazorPaySuccessResponse {
 type IVerifyPaymentRequest = Omit<IRequestWithUser, 'body'> & {
   body: IRazorPaySuccessResponse;
 };
+
+export interface GetAllOrdersQuery {
+  paymentStatus?: OrderPaymentStatusEnum | 'all';
+  search?: string;
+}
 
 export const handleCreateRazorPayOrder = async (req: ICreateOrderRequest, res: Response) => {
   const orderId = generateOrderId();
@@ -177,5 +183,19 @@ export const handleCreateDirectPurchaseOrder = async (req: IRequestWithUser, res
 
   return handleResponse(res, 200, 'Purchase successful', {
     data,
+  });
+};
+
+export const handleGetAllOrders = async (req: IRequestWithUser, res: Response) => {
+  const queryString: GetAllOrdersQuery = req.query;
+
+  const orders = await getAllOrders(
+    req?.user?._id as mongoose.Types.ObjectId,
+    queryString?.paymentStatus,
+    queryString?.search ?? '',
+  );
+
+  return handleResponse(res, 200, '', {
+    data: orders,
   });
 };
