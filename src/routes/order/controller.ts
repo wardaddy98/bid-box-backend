@@ -5,14 +5,14 @@ import { OrderPaymentStatusEnum, OrderTypeEnum } from '@/models/order.model';
 import { generateOrderId } from '@/utils/commonUtils';
 import createRazorPayInstance from '@/utils/createRazorPayInstance';
 import { handleResponse } from '@/utils/handleResponse';
-import { verifyPaymentSignature } from '@/utils/razporPayUtils';
+import { createRPayOrder, verifyPaymentSignature } from '@/utils/razorPayUtils';
 import stringToObjectId from '@/utils/stringToObjectId';
 import { Request, Response } from 'express';
 import _ from 'lodash';
 import mongoose from 'mongoose';
 import { getAuctionByAuctionId } from '../auction/service';
 import { getBidPackById } from '../bid/service';
-import { getProductById, getProductByProductId } from '../product/service';
+import { getProductByProductId } from '../product/service';
 import {
   bidPackPurchaseSuccessFullTransaction,
   createDirectPurchaseOrder,
@@ -26,9 +26,7 @@ const razorPayInstance = createRazorPayInstance();
 
 interface ICreateOrderRequest extends Omit<IRequestWithUser, 'body'> {
   body: {
-    orderType: OrderTypeEnum;
-    bidPack?: string;
-    product?: string;
+    bidPack: string;
   };
 }
 
@@ -49,52 +47,27 @@ export interface GetAllOrdersQuery {
 
 export const handleCreateRazorPayOrder = async (req: ICreateOrderRequest, res: Response) => {
   const orderId = generateOrderId();
-  const payload = req.body;
-  let amount = 0;
 
-  if (payload.orderType === OrderTypeEnum['Bids Pack']) {
-    const bidPack = await getBidPackById(payload.bidPack || '');
+  const bidPackId = req.body.bidPack;
 
-    if (!payload.bidPack) {
-      throw new BadRequestError('Bid pack not selected!');
-    }
+  const bidPack = await getBidPackById(bidPackId);
 
-    if (_.isEmpty(bidPack)) {
-      throw new BadRequestError('Bid pack does not exist!');
-    }
-    amount = bidPack?.price ?? 0;
-  } else if (payload.orderType === OrderTypeEnum.Product) {
-    if (!payload.product) {
-      throw new BadRequestError('Product not selected!');
-    }
-
-    const product = await getProductById(payload.product);
-    if (_.isEmpty(product)) {
-      throw new BadRequestError('Product does not exist!');
-    }
-
-    if (!(product.availableStock > 0)) {
-      throw new BadRequestError('Product stock not available!');
-    }
-
-    amount = product.sellingPrice;
+  if (_.isEmpty(bidPack)) {
+    throw new BadRequestError('Bid pack does not exist!');
   }
 
-  const response = await razorPayInstance.orders.create({
-    currency: 'INR',
-    receipt: orderId,
-    amount: amount * 100,
-  });
+  const amount = bidPack?.price ?? 0;
+
+  const response = await createRPayOrder(orderId, amount);
 
   const order = await createOrder({
     user: req.user?._id as mongoose.Types.ObjectId,
     amount,
-    orderType: payload.orderType,
+    orderType: OrderTypeEnum['Bids Pack'],
     orderId,
     razorPayOrderId: response?.id,
     razorPayMetaData: response,
-    ...(payload?.bidPack ? { bidPack: stringToObjectId(payload?.bidPack ?? '') } : {}),
-    ...(payload?.product ? { product: stringToObjectId(payload?.product ?? '') } : {}),
+    bidPack: stringToObjectId(bidPackId),
   });
 
   return handleResponse(res, 200, 'Razorpay order created', {

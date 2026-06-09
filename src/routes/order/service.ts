@@ -27,7 +27,7 @@ export const bidPackPurchaseSuccessFullTransaction = async (
             bidsBalance: totalBids,
           },
         },
-        { session, returnDocument: 'after' },
+        { session, returnDocument: 'after', lean: true },
       ).lean();
 
       await OrderModel.findByIdAndUpdate(

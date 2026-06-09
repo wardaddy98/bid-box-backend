@@ -17,6 +17,10 @@ export const createDirectPurchaseOrderSchema = Joi.object({
   netDeduction: Joi.number().integer().required(),
 });
 
+export const createRazorPayOrderSchema = Joi.object({
+  bidPack: Joi.string().required(),
+});
+
 export const getAllOrdersQuerySchema = Joi.object({
   paymentStatus: Joi.string()
     .valid(...Object.values(OrderPaymentStatusEnum), 'all')

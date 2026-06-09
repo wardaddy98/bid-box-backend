@@ -3,6 +3,7 @@ import validateQueryString from '@/middlewares/validateQueryStrings';
 import validateSchema from '@/middlewares/validateSchema';
 import {
   createDirectPurchaseOrderSchema,
+  createRazorPayOrderSchema,
   getAllOrdersQuerySchema,
   paymentFailureSchema,
   verifyPaymentSchema,
@@ -20,7 +21,7 @@ const router = express.Router();
 
 router
   .route('/')
-  .post(isLoggedIn, handleCreateRazorPayOrder, handleCreateDirectPurchaseOrder)
+  .post(isLoggedIn, validateSchema(createRazorPayOrderSchema), handleCreateRazorPayOrder)
   .get(isLoggedIn, validateQueryString(getAllOrdersQuerySchema), handleGetAllOrders);
 
 router
