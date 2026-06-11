@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "ts-node-dev --respawn -r tsconfig-paths/register ./src/server.ts",
     "build:dev": "rimraf dist && cross-env NODE_ENV=development tsc",
-    "build:prod": "rimraf dist && cross-env NODE_ENV=production tsc",
+    "build:prod": "rm -rf dist && cross-env NODE_ENV=production tsc",
     "start": "node --import module-alias/register ./dist/server.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
