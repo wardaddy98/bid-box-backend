@@ -38,7 +38,7 @@ export const getAllProducts = async (
 ) => {
   const filterOptions: QueryFilter<Product> = {};
   if (Object.values(ProductCategoryEnum).includes(category as ProductCategoryEnum)) {
-    filterOptions.category = category;
+    filterOptions.category = category as ProductCategoryEnum;
   }
 
   if (search) {
