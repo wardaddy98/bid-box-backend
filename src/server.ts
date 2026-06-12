@@ -5,7 +5,7 @@ import logger from '@/utils/logger';
 import SwaggerParser from '@apidevtools/swagger-parser';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import express, { Express } from 'express';
+import express, { Express, Response } from 'express';
 import helmet from 'helmet';
 import http from 'http';
 import path from 'path';
@@ -45,6 +45,10 @@ import { initializeSocketInstance } from './socket/socket';
     );
     app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
   }
+
+  app.get('/', (_, res: Response) => {
+    return res.json('Server live!');
+  });
 
   app.use('/', baseRouter);
 
