@@ -27,7 +27,7 @@ import { initializeSocketInstance } from './socket/socket';
 
   app.use(
     cors({
-      origin: ['http://localhost:8080'],
+      origin: ['http://localhost:8080', 'https://bidbox.suddathgautam.in'],
       methods: ['GET', 'POST', 'PUT', 'PATCH'],
       // to allow cookies when frontend and backend are on different domains
       credentials: true,
