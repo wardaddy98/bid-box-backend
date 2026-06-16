@@ -47,7 +47,6 @@ const logger = winston.createLogger({
   handleRejections: true,
   transports: [consoleTransport],
 });
-logger.add(fileTransport);
 
 if (isProduction) {
   logger.add(fileTransport);
