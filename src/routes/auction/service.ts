@@ -576,3 +576,52 @@ export const getWinners = async () => {
 
   return data;
 };
+
+export const getUpcomingOrCancelledAuctions = async (status: AuctionStatusEnum) => {
+  const auctions = await AuctionModel.aggregate([
+    {
+      $match: {
+        status,
+      },
+    },
+    {
+      $lookup: {
+        from: 'products',
+        localField: 'product',
+        foreignField: '_id',
+        as: 'product',
+      },
+    },
+
+    {
+      $unwind: {
+        path: '$product',
+      },
+    },
+    {
+      $sort: {
+        createdAt: -1,
+      },
+    },
+  ]).exec();
+
+  const data = await Promise.all(
+    auctions.map(async (auction: IAuctionWithProduct) => {
+      const productImages = await Promise.all(
+        (auction?.product?.productImages ?? []).map(async (objectKey: string) => {
+          return {
+            objectKey,
+            signedUrl: await generateSignedUrl(objectKey),
+          };
+        }),
+      );
+
+      return {
+        ...auction,
+        product: { ...auction.product, productImages },
+      };
+    }),
+  );
+
+  return data;
+};

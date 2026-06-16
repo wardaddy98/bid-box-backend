@@ -11,6 +11,7 @@ import {
   editAuction,
   getAllAuctions,
   getSingleAuctionData,
+  getUpcomingOrCancelledAuctions,
   getWinners,
 } from './service';
 
@@ -94,5 +95,19 @@ export const handleGetWinners = async (req: Request, res: Response) => {
 
   return handleResponse(res, 200, '', {
     data: winners,
+  });
+};
+
+export const handleUpcomingAuctions = async (req: Request, res: Response) => {
+  const upcomingAuctions = await getUpcomingOrCancelledAuctions(AuctionStatusEnum.Pending);
+  return handleResponse(res, 200, '', {
+    data: upcomingAuctions,
+  });
+};
+
+export const handleCancelledAuctions = async (req: Request, res: Response) => {
+  const cancelledAuctions = await getUpcomingOrCancelledAuctions(AuctionStatusEnum.Cancelled);
+  return handleResponse(res, 200, '', {
+    data: cancelledAuctions,
   });
 };
