@@ -47,7 +47,7 @@ import { initializeSocketInstance } from './socket/socket';
   }
 
   app.get('/', (_, res: Response) => {
-    return res.json('Server live!');
+    return res.json('Server live github actions!');
   });
 
   app.use('/', baseRouter);
