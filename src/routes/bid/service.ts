@@ -132,7 +132,7 @@ export const createBidPack = async (payload: BidPack) => {
 };
 
 export const getBidPacks = async () => {
-  return BidPackModel.find({}).lean();
+  return BidPackModel.find({}).sort({ price: 1 }).lean();
 };
 
 export const getBidPackById = async (_id: string) => {
