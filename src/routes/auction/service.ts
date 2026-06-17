@@ -3,6 +3,7 @@ import { Auction, AuctionModel, AuctionStatusEnum } from '@/models/auction.model
 import { Bid, BidModel } from '@/models/bid.model';
 import { OrderModel, OrderPaymentStatusEnum, OrderTypeEnum } from '@/models/order.model';
 import { Product, ProductCategoryEnum, ProductModel } from '@/models/product.model';
+import { Review } from '@/models/review.model';
 import { User } from '@/models/user.model';
 import { generateOrderId } from '@/utils/commonUtils';
 import { IPagination } from '@/utils/handlePagination';
@@ -38,6 +39,10 @@ interface IAuctionWithProductAndBidsAndWinningBid extends Omit<
   'winningBid'
 > {
   winningBid: IBidWithUser;
+}
+
+interface IReviewWithUser extends Omit<Review, 'user'> {
+  user: User;
 }
 
 export const getAllAuctions = async (
@@ -249,6 +254,48 @@ export const getSingleAuctionData = async (auctionId: string) => {
         from: 'products',
         localField: 'product',
         foreignField: '_id',
+        pipeline: [
+          {
+            $lookup: {
+              from: 'reviews',
+              localField: '_id',
+              foreignField: 'product',
+              pipeline: [
+                {
+                  $lookup: {
+                    from: 'users',
+                    localField: 'user',
+                    foreignField: '_id',
+                    as: 'user',
+                  },
+                },
+                {
+                  $unwind: {
+                    path: '$user',
+                  },
+                },
+                {
+                  $project: {
+                    'user.password': 0,
+                    'user.bidsBalance': 0,
+                    'user.favoriteAuctions': 0,
+                    'user.role': 0,
+                    'user.googleId': 0,
+                    'user.createdAt': 0,
+                    'user.updatedAt': 0,
+                  },
+                },
+                {
+                  $sort: {
+                    createdAt: -1,
+                  },
+                },
+              ],
+              as: 'reviews',
+            },
+          },
+        ],
+
         as: 'product',
       },
     },
@@ -313,6 +360,24 @@ export const getSingleAuctionData = async (auctionId: string) => {
     },
   ]).exec();
 
+  let reviews = data?.[0]?.product?.reviews as IReviewWithUser[];
+
+  reviews = await Promise.all(
+    reviews.map(async review => {
+      let profileImage = review?.user?.profileImage ?? '';
+      if (profileImage) {
+        profileImage = await generateSignedUrl(profileImage);
+      }
+      return {
+        ...review,
+        user: {
+          ...(review?.user ?? {}),
+          profileImage,
+        },
+      };
+    }),
+  );
+
   const auction: IAuctionWithProductAndBids = data?.[0] ?? {};
   const productImages = await Promise.all(
     (auction?.product?.productImages ?? []).map(async (objectKey: string) => {
@@ -339,6 +404,7 @@ export const getSingleAuctionData = async (auctionId: string) => {
     product: {
       ...(auction.product ?? {}),
       productImages,
+      reviews,
     },
   };
 };
