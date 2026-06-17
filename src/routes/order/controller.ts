@@ -3,7 +3,6 @@ import { IRequestWithUser } from '@/middlewares/isAdmin';
 import { AuctionStatusEnum } from '@/models/auction.model';
 import { OrderPaymentStatusEnum, OrderTypeEnum } from '@/models/order.model';
 import { generateOrderId } from '@/utils/commonUtils';
-import createRazorPayInstance from '@/utils/createRazorPayInstance';
 import { handleResponse } from '@/utils/handleResponse';
 import { createRPayOrder, verifyPaymentSignature } from '@/utils/razorPayUtils';
 import stringToObjectId from '@/utils/stringToObjectId';
@@ -21,8 +20,6 @@ import {
   getOrderByRazorPayId,
   updatePaymentFailure,
 } from './service';
-
-const razorPayInstance = createRazorPayInstance();
 
 interface ICreateOrderRequest extends Omit<IRequestWithUser, 'body'> {
   body: {
@@ -146,7 +143,7 @@ export const handleCreateDirectPurchaseOrder = async (req: IRequestWithUser, res
     }
   }
 
-  const product = await getProductByProductId(productId);
+  const product = await getProductByProductId(productId).lean();
 
   if (_.isEmpty(product)) {
     throw new BadRequestError('Invalid product!');

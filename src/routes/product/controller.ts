@@ -2,12 +2,16 @@ import { BadRequestError } from '@/middlewares/handleError';
 import { GetAllQuery } from '@/types/common';
 import { handleResponse } from '@/utils/handleResponse';
 import { generateSignedUrl, handleMultipleDelete, handleMultipleUpload } from '@/utils/s3Utils';
+import { RequestWithUser } from '@/utils/token';
 import { Request, Response } from 'express';
 import _ from 'lodash';
+import mongoose from 'mongoose';
 import 'multer';
 import {
   createProduct,
+  createProductReview,
   editProduct,
+  findOneReview,
   getAllProducts,
   getAllProductsUnPaginated,
   getProductByProductId,
@@ -126,4 +130,46 @@ export const handleEditProduct = async (req: Request, res: Response) => {
     }
     throw err;
   }
+};
+
+export const handleProductReview = async (req: RequestWithUser, res: Response) => {
+  const productId = req?.body?.productId ?? '';
+  const userObjectId = req.user?._id;
+
+  const product = await getProductByProductId(productId).lean();
+
+  if (_.isEmpty(product)) {
+    throw new BadRequestError('Product does not exist!');
+  }
+
+  const existingReview = await findOneReview({
+    user: userObjectId,
+    product: product._id,
+  });
+
+  if (!_.isEmpty(existingReview)) {
+    throw new BadRequestError('You have already reviewed this product!');
+  }
+
+  const reviewDetails = {
+    asDescribed: Number(req.body?.asDescribed ?? 0),
+    packaging: Number(req.body?.packaging ?? 0),
+    productQuality: Number(req.body?.productQuality ?? 0),
+    shipping: Number(req.body?.shipping ?? 0),
+  };
+
+  const overallRating = Number(
+    (Object.values(reviewDetails).reduce((acc, current) => acc + current, 0) / 4).toFixed(1),
+  );
+
+  const review = await createProductReview({
+    user: userObjectId as mongoose.Types.ObjectId,
+    product: product._id,
+    comment: req.body?.comment,
+    title: req.body?.title,
+    overallRating,
+    details: reviewDetails,
+  });
+
+  return handleResponse(res, 200, '', { data: review });
 };
