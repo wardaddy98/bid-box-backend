@@ -79,15 +79,3 @@ export const handleGetBidPacks = async (req: Request, res: Response) => {
     data: bidPacks,
   });
 };
-
-// const allBidsByUser = await BidModel.find({ auction: auction._id, user: req?.user?._id })
-//   .sort({ createdAt: 1 })
-//   .lean();
-
-// const totalBidsUsedByUser = allBidsByUser.reduce((acc, currentBid, idx) => {
-//   if (idx === 0) {
-//     return acc + Number(currentBid?.amount || 0);
-//   } else {
-//     return acc + Number(currentBid?.amount || 0) - Number(allBidsByUser?.[idx-1]?.amount || 0);
-//   }
-// }, 0);
