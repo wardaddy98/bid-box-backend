@@ -28,3 +28,13 @@ export const getAllProductsQuerySchema = Joi.object({
     .optional(),
   search: Joi.string().optional().allow(''),
 });
+
+export const createProductReviewSchema = Joi.object({
+  productId: Joi.string().required(),
+  title: Joi.string().required(),
+  comment: Joi.string().required(),
+  shipping: Joi.number().positive().integer().required().max(5),
+  productQuality: Joi.number().positive().integer().required().max(5),
+  asDescribed: Joi.number().positive().integer().required().max(5),
+  packaging: Joi.number().positive().integer().required().max(5),
+});

@@ -8,5 +8,5 @@
     "source.organizeImports": "always",
     "source.fixAll.eslint": "always"
   },
-  "cSpell.words": ["apidevtools", "bidpacks", "brcypt", "envalid", "Gautam", "paise"]
+  "cSpell.words": ["apidevtools", "bidpacks", "brcypt", "envalid", "Gautam", "maxlength", "paise"]
 }

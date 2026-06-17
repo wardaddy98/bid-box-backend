@@ -1,5 +1,6 @@
 import { BadRequestError } from '@/middlewares/handleError';
 import { Product, ProductCategoryEnum, ProductModel } from '@/models/product.model';
+import { Review, ReviewModel } from '@/models/review.model';
 import handlePagination from '@/utils/handlePagination';
 import { generateSignedUrl } from '@/utils/s3Utils';
 import stringToObjectId from '@/utils/stringToObjectId';
@@ -84,4 +85,12 @@ export const editProduct = async (productId: string, updateQuery: UpdateQuery<Pr
     throw new BadRequestError('Product not found!');
   }
   return updated;
+};
+
+export const createProductReview = async (createOptions: Omit<Review, '_id'>) => {
+  return (await ReviewModel.create(createOptions)).toObject();
+};
+
+export const findOneReview = async (findOptions: QueryFilter<Review>) => {
+  return ReviewModel.findOne(findOptions);
 };

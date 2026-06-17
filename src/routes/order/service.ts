@@ -4,6 +4,7 @@ import { Product, ProductModel } from '@/models/product.model';
 import { UserModel } from '@/models/user.model';
 import { generateOrderId } from '@/utils/commonUtils';
 import handleTransaction from '@/utils/handleTransaction';
+import { generateSignedUrl } from '@/utils/s3Utils';
 import mongoose, { ClientSession } from 'mongoose';
 import { OrderPaymentStatusEnum } from '../../models/order.model';
 
@@ -130,7 +131,7 @@ export const getAllOrders = async (
   paymentStatus?: OrderPaymentStatusEnum | 'all',
   search?: string,
 ) => {
-  return OrderModel.aggregate([
+  const orders = await OrderModel.aggregate([
     {
       $match: {
         user: userObjectId,
@@ -144,6 +145,36 @@ export const getAllOrders = async (
         from: 'products',
         localField: 'product',
         foreignField: '_id',
+        pipeline: [
+          {
+            $lookup: {
+              from: 'reviews',
+              let: {
+                productObjectId: '$_id',
+              },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [
+                        { $eq: ['$$productObjectId', '$product'] },
+                        { $eq: [userObjectId, '$user'] },
+                      ],
+                    },
+                  },
+                },
+              ],
+              as: 'review',
+            },
+          },
+          {
+            $unwind: {
+              path: '$review',
+              preserveNullAndEmptyArrays: true,
+            },
+          },
+        ],
+
         as: 'product',
       },
     },
@@ -204,4 +235,27 @@ export const getAllOrders = async (
       },
     },
   ]).exec();
+
+  const ordersWithProductImages = await Promise.all(
+    orders.map(async order => {
+      let productImages = [];
+      if (order.product) {
+        productImages = await Promise.all(
+          order?.product?.productImages.map(async (objectKey: string) => {
+            return {
+              objectKey,
+              signedUrl: await generateSignedUrl(objectKey),
+            };
+          }),
+        );
+      }
+
+      return {
+        ...order,
+        ...(order?.product ? { product: { ...order.product, productImages } } : {}),
+      };
+    }),
+  );
+
+  return ordersWithProductImages;
 };

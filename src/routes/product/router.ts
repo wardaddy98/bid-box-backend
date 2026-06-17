@@ -3,6 +3,7 @@ import upload from '@/middlewares/upload';
 import validateQueryString from '@/middlewares/validateQueryStrings';
 import validateSchema from '@/middlewares/validateSchema';
 import {
+  createProductReviewSchema,
   createProductSchema,
   editProductSchema,
   getAllProductsQuerySchema,
@@ -13,6 +14,7 @@ import {
   handleEditProduct,
   handleGetAllProducts,
   handleGetAllProductsUnpaginated,
+  handleProductReview,
 } from './controller';
 
 const router = express.Router();
@@ -22,9 +24,14 @@ router
   .post(isLoggedIn, upload.array('files'), validateSchema(createProductSchema), handleCreateProduct)
   .get(isLoggedIn, validateQueryString(getAllProductsQuerySchema), handleGetAllProducts);
 
+router.route('/raw').get(isLoggedIn, handleGetAllProductsUnpaginated);
+
+router
+  .route('/review')
+  .post(isLoggedIn, validateSchema(createProductReviewSchema), handleProductReview);
+
 router
   .route('/:productId')
   .patch(isLoggedIn, upload.array('files'), validateSchema(editProductSchema), handleEditProduct);
 
-router.route('/raw').get(isLoggedIn, handleGetAllProductsUnpaginated);
 export default router;
