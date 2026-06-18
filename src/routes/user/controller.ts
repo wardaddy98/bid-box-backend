@@ -90,6 +90,7 @@ export const handleLoginController = async (req: Request, res: Response) => {
     throw new BadRequestError('User with this email does not exist!');
   }
 
+  //handle logic for when user logs in with google then tries to login with pass , but pass does not exist
   const tokenData: TokenCreationData = {
     email: user.email,
     role: user.role,

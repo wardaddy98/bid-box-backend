@@ -32,6 +32,7 @@ export const initializeSocketInstance = (server: HttpServerType) => {
   });
 
   io.on('connection', socket => {
+    console.log('SOCKET CONNECTION LIVE', socket.id);
     auctionListeners(socket);
     socket.on('disconnect', () => {
       logger.info(`Socket connection destroyed with id ${socket.id}`);
