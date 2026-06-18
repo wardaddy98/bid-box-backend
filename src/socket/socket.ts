@@ -11,12 +11,12 @@ export const initializeSocketInstance = (server: HttpServerType) => {
   //socket instance only attaches to http server and not express server
   io = new Server(server, {
     cors: {
-      // origin: [
-      //   'http://localhost:8080',
-      //   'https://admin.socket.io',
-      //   'https://bidbox.suddathgautam.in',
-      // ],
-      origin: true,
+      origin: [
+        'http://localhost:8080',
+        'http://localhost:3000',
+        'https://admin.socket.io',
+        'https://bidbox.suddathgautam.in',
+      ],
       credentials: true,
     },
   });
