@@ -11,10 +11,12 @@ export enum AuctionSocketEvents {
 
 const auctionListeners = (socket: Socket) => {
   socket.on(AuctionSocketEvents.JOIN_AUCTION, auctionId => {
+    console.log(`socket- ${socket.id} joined ${auctionId} SCKTT`);
     socket.join(auctionId);
   });
 
   socket.on(AuctionSocketEvents.LEAVE_AUCTION, auctionId => {
+    console.log(`socket- ${socket.id} left ${auctionId} SCKTT`);
     socket.leave(auctionId);
   });
 };
