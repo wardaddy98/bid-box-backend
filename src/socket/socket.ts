@@ -13,7 +13,6 @@ export const initializeSocketInstance = (server: HttpServerType) => {
     cors: {
       origin: [
         'http://localhost:8080',
-        'http://localhost:3000',
         'https://admin.socket.io',
         'https://bidbox.suddathgautam.in',
       ],
@@ -33,9 +32,11 @@ export const initializeSocketInstance = (server: HttpServerType) => {
   });
 
   io.on('connection', socket => {
-    console.log('SOCKET CONNECTION LIVE', socket.id);
+    console.log('SCKTT LIVE', socket.id);
+    logger.info(`Socket connection live with id ${socket.id}`);
     auctionListeners(socket);
     socket.on('disconnect', () => {
+      console.log('SCKTT DISCONNECT', socket.id);
       logger.info(`Socket connection destroyed with id ${socket.id}`);
     });
   });
