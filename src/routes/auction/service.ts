@@ -670,7 +670,7 @@ export const getAuctionsHome = async () => {
             },
             {
               $sort: {
-                createdAt: -1,
+                createdAt: 1,
               },
             },
           ],
