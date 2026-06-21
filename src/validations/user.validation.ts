@@ -25,3 +25,9 @@ export const bookmarkSchema = Joi.object({
 export const googleAuthSchema = Joi.object({
   credential: Joi.string().required(),
 });
+
+export const createPasswordSchema = Joi.object({
+  password: Joi.string()
+    .pattern(/^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+={[}\]|\\:;"'<>,.?/~`]).{8,16}$/)
+    .required(),
+});
