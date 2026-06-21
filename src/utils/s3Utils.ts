@@ -23,15 +23,15 @@ export const uploadFile = async (objectKey: string, file: Express.Multer.File) =
   );
 };
 
-export const generateSignedUrl = async (objectKey: string) => {
+export const generateSignedUrl = async (objectKey: string, expiresIn: number = 60 * 15) => {
   const command = new GetObjectCommand({
     Bucket: constants.AWS_S3_BUCKET_NAME,
     Key: objectKey,
   });
 
   const signedUrl = await getSignedUrl(s3, command, {
-    //15 mins
-    expiresIn: 60 * 15,
+    //15 mins - 60 * 15
+    expiresIn,
   });
 
   return signedUrl;

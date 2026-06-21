@@ -75,3 +75,20 @@ export const updateUserById = (
 export const createUserWithoutPassword = async (payload: Omit<User, '_id'>) => {
   return (await UserModel.create(payload)).toObject();
 };
+
+export const updateUserPassword = async (userObjectId: string, password: string) => {
+  const hash = await generateHash(password);
+
+  return UserModel.findByIdAndUpdate(
+    userObjectId,
+    {
+      $set: {
+        password: hash,
+      },
+    },
+    {
+      returnDocument: 'after',
+      lean: true,
+    },
+  );
+};

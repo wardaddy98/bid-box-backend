@@ -9,13 +9,12 @@ import {
 } from '@/validations/auction.validation';
 import express from 'express';
 import {
-  handleCancelledAuctions,
   handleCreateAuction,
   handleEditAuction,
   handleGetAllAuctions,
   handleGetSingleAuction,
   handleGetWinners,
-  handleUpcomingAuctions,
+  handleUpcomingAuctionsHome,
 } from './controller';
 
 const router = express.Router();
@@ -27,8 +26,7 @@ router
 
 router.route('/winners').get(isLoggedIn, handleGetWinners);
 
-router.route('/upcoming').get(isLoggedIn, handleUpcomingAuctions);
-router.route('/cancelled').get(isLoggedIn, handleCancelledAuctions);
+router.route('/home').get(isLoggedIn, handleUpcomingAuctionsHome);
 
 router
   .route('/:auctionId')

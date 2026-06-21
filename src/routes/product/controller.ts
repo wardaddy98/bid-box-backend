@@ -171,5 +171,5 @@ export const handleProductReview = async (req: RequestWithUser, res: Response) =
     details: reviewDetails,
   });
 
-  return handleResponse(res, 200, '', { data: review });
+  return handleResponse(res, 200, 'Product Review Saved', { data: review });
 };

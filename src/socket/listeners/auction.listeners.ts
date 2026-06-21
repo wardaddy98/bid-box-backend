@@ -1,3 +1,4 @@
+import logger from '@/utils/logger';
 import { Socket } from 'socket.io';
 
 export enum AuctionSocketEvents {
@@ -11,13 +12,13 @@ export enum AuctionSocketEvents {
 
 const auctionListeners = (socket: Socket) => {
   socket.on(AuctionSocketEvents.JOIN_AUCTION, auctionId => {
-    console.log(`socket- ${socket.id} joined ${auctionId} SCKTT`);
     socket.join(auctionId);
+    logger.info(`socket- ${socket.id} joined ${auctionId}`);
   });
 
   socket.on(AuctionSocketEvents.LEAVE_AUCTION, auctionId => {
-    console.log(`socket- ${socket.id} left ${auctionId} SCKTT`);
     socket.leave(auctionId);
+    logger.info(`socket- ${socket.id} left ${auctionId}`);
   });
 };
 

@@ -38,6 +38,7 @@ import {
   findUserById,
   removeBookmark,
   updateUserById,
+  updateUserPassword,
 } from './service';
 
 export const handleRegisterController = async (req: Request, res: Response) => {
@@ -56,7 +57,7 @@ export const handleRegisterController = async (req: Request, res: Response) => {
     if (file) {
       objectKey = `profile/${Date.now()}-${nanoid()}`;
       await uploadFile(objectKey, file);
-      profileImageSignedUrl = await generateSignedUrl(objectKey);
+      profileImageSignedUrl = await generateSignedUrl(objectKey, 60 * 24 * 7);
     }
 
     const user = await createUser({ ...payload, profileImage: objectKey });
@@ -108,7 +109,7 @@ export const handleLoginController = async (req: Request, res: Response) => {
 
   let profileImageSignedUrl = '';
   if (user?.profileImage) {
-    profileImageSignedUrl = await generateSignedUrl(user?.profileImage);
+    profileImageSignedUrl = await generateSignedUrl(user?.profileImage, 60 * 24 * 7);
   }
 
   return handleResponse(res, 200, 'User logged in successfully', {
@@ -200,6 +201,7 @@ export const handleGoogleAuth = async (req: Request, res: Response) => {
   //will be used to generate access and refresh token
   let finalUserData;
 
+  let requiresPasswordCreation = true;
   const existingUser = await findUserByEmail(tokenPayload.email as string);
 
   if (existingUser) {
@@ -265,10 +267,23 @@ export const handleGoogleAuth = async (req: Request, res: Response) => {
 
   const userResponse: Partial<User> = _.cloneDeep(finalUserData ?? {});
   if (userResponse?.password) {
+    requiresPasswordCreation = false;
     delete userResponse.password;
   }
   return handleResponse(res, 200, 'User created successfully', {
-    user: { ...userResponse, profileImage: profileImageSignedUrl },
+    user: { ...userResponse, profileImage: profileImageSignedUrl, requiresPasswordCreation },
     token,
   });
+};
+
+export const handleCreatePassword = async (req: RequestWithUser, res: Response) => {
+  const updatedUser = await updateUserPassword(
+    (req.user?._id ?? '') as string,
+    req?.body?.password,
+  );
+
+  if (!updatedUser) {
+    throw new BadRequestError('User with this email does not exist!');
+  }
+  return handleResponse(res, 200, 'Password created successfully', {});
 };

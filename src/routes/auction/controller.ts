@@ -10,8 +10,8 @@ import {
   createAuctionTransaction,
   editAuction,
   getAllAuctions,
+  getAuctionsHome,
   getSingleAuctionData,
-  getUpcomingOrCancelledAuctions,
   getWinners,
 } from './service';
 
@@ -98,16 +98,9 @@ export const handleGetWinners = async (req: Request, res: Response) => {
   });
 };
 
-export const handleUpcomingAuctions = async (req: Request, res: Response) => {
-  const upcomingAuctions = await getUpcomingOrCancelledAuctions(AuctionStatusEnum.Pending);
+export const handleUpcomingAuctionsHome = async (req: Request, res: Response) => {
+  const auctions = await getAuctionsHome();
   return handleResponse(res, 200, '', {
-    data: upcomingAuctions,
-  });
-};
-
-export const handleCancelledAuctions = async (req: Request, res: Response) => {
-  const cancelledAuctions = await getUpcomingOrCancelledAuctions(AuctionStatusEnum.Cancelled);
-  return handleResponse(res, 200, '', {
-    data: cancelledAuctions,
+    data: auctions,
   });
 };

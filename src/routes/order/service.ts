@@ -196,6 +196,35 @@ export const getAllOrders = async (
               localField: 'product',
               foreignField: '_id',
               as: 'product',
+              pipeline: [
+                {
+                  $lookup: {
+                    from: 'reviews',
+                    let: {
+                      productObjectId: '$_id',
+                    },
+                    pipeline: [
+                      {
+                        $match: {
+                          $expr: {
+                            $and: [
+                              { $eq: ['$$productObjectId', '$product'] },
+                              { $eq: [userObjectId, '$user'] },
+                            ],
+                          },
+                        },
+                      },
+                    ],
+                    as: 'review',
+                  },
+                },
+                {
+                  $unwind: {
+                    path: '$review',
+                    preserveNullAndEmptyArrays: true,
+                  },
+                },
+              ],
             },
           },
 
@@ -238,21 +267,34 @@ export const getAllOrders = async (
 
   const ordersWithProductImages = await Promise.all(
     orders.map(async order => {
-      let productImages = [];
-      if (order.product) {
-        productImages = await Promise.all(
-          order?.product?.productImages.map(async (objectKey: string) => {
-            return {
-              objectKey,
-              signedUrl: await generateSignedUrl(objectKey),
-            };
-          }),
-        );
+      const productImages = [];
+      const productImagesAuction = [];
+
+      if (order?.auction && order?.auction?.product?.productImages?.[0]) {
+        productImagesAuction.push({
+          objectKey: order?.auction?.product?.productImages?.[0],
+          signedUrl: await generateSignedUrl(order?.auction?.product?.productImages?.[0]),
+        });
+      }
+
+      if (order?.product && order?.product?.productImages?.[0]) {
+        productImages.push({
+          objectKey: order?.product?.productImages?.[0],
+          signedUrl: await generateSignedUrl(order?.product?.productImages?.[0]),
+        });
       }
 
       return {
         ...order,
         ...(order?.product ? { product: { ...order.product, productImages } } : {}),
+        ...(order?.auction
+          ? {
+              auction: {
+                ...order.auction,
+                product: { ...order.auction.product, productImages: productImagesAuction },
+              },
+            }
+          : {}),
       };
     }),
   );

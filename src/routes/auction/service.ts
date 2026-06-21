@@ -643,45 +643,120 @@ export const getWinners = async () => {
   return data;
 };
 
-export const getUpcomingOrCancelledAuctions = async (status: AuctionStatusEnum) => {
-  const auctions = await AuctionModel.aggregate([
-    {
-      $match: {
-        status,
-      },
-    },
-    {
-      $lookup: {
-        from: 'products',
-        localField: 'product',
-        foreignField: '_id',
-        as: 'product',
-      },
-    },
+export const getAuctionsHome = async () => {
+  const auctions = (
+    await AuctionModel.aggregate([
+      {
+        $facet: {
+          upcomingAuctions: [
+            {
+              $match: {
+                status: AuctionStatusEnum.Pending,
+              },
+            },
+            {
+              $lookup: {
+                from: 'products',
+                localField: 'product',
+                foreignField: '_id',
+                as: 'product',
+              },
+            },
 
-    {
-      $unwind: {
-        path: '$product',
-      },
-    },
-    {
-      $sort: {
-        createdAt: -1,
-      },
-    },
-  ]).exec();
+            {
+              $unwind: {
+                path: '$product',
+              },
+            },
+            {
+              $sort: {
+                createdAt: 1,
+              },
+            },
+          ],
+          cancelledAuctions: [
+            {
+              $match: {
+                status: AuctionStatusEnum.Cancelled,
+              },
+            },
+            {
+              $lookup: {
+                from: 'products',
+                localField: 'product',
+                foreignField: '_id',
+                as: 'product',
+              },
+            },
 
-  const data = await Promise.all(
-    auctions.map(async (auction: IAuctionWithProduct) => {
-      const productImages = await Promise.all(
-        (auction?.product?.productImages ?? []).map(async (objectKey: string) => {
-          return {
-            objectKey,
-            signedUrl: await generateSignedUrl(objectKey),
-          };
-        }),
-      );
+            {
+              $unwind: {
+                path: '$product',
+              },
+            },
+            {
+              $sort: {
+                createdAt: -1,
+              },
+            },
+          ],
+          completedAuctions: [
+            {
+              $match: {
+                status: AuctionStatusEnum.Completed,
+              },
+            },
+            {
+              $lookup: {
+                from: 'products',
+                localField: 'product',
+                foreignField: '_id',
+                as: 'product',
+              },
+            },
 
+            {
+              $unwind: {
+                path: '$product',
+              },
+            },
+            {
+              $lookup: {
+                from: 'bids',
+                localField: 'winningBid',
+                foreignField: '_id',
+                as: 'winningBid',
+              },
+            },
+            {
+              $unwind: {
+                path: '$winningBid',
+              },
+            },
+
+            {
+              $sort: {
+                createdAt: -1,
+              },
+            },
+          ],
+        },
+      },
+    ]).exec()
+  )[0];
+
+  const upcomingAuctions = await Promise.all(
+    (auctions?.upcomingAuctions ?? []).map(async (auction: IAuctionWithProduct) => {
+      const firstProductImageObjectKey = auction?.product?.productImages?.[0];
+      const productImages = [];
+      if (firstProductImageObjectKey) {
+        const signedUrl = await generateSignedUrl(firstProductImageObjectKey);
+
+        productImages.push({
+          objectKey: firstProductImageObjectKey,
+          signedUrl,
+        });
+      }
       return {
         ...auction,
         product: { ...auction.product, productImages },
@@ -689,5 +764,47 @@ export const getUpcomingOrCancelledAuctions = async (status: AuctionStatusEnum) 
     }),
   );
 
-  return data;
+  const cancelledAuctions = await Promise.all(
+    (auctions?.cancelledAuctions ?? []).map(async (auction: IAuctionWithProduct) => {
+      const firstProductImageObjectKey = auction?.product?.productImages?.[0];
+      const productImages = [];
+      if (firstProductImageObjectKey) {
+        const signedUrl = await generateSignedUrl(firstProductImageObjectKey);
+
+        productImages.push({
+          objectKey: firstProductImageObjectKey,
+          signedUrl,
+        });
+      }
+      return {
+        ...auction,
+        product: { ...auction.product, productImages },
+      };
+    }),
+  );
+
+  const completedAuctions = await Promise.all(
+    (auctions?.completedAuctions ?? []).map(async (auction: IAuctionWithProduct) => {
+      const firstProductImageObjectKey = auction?.product?.productImages?.[0];
+      const productImages = [];
+      if (firstProductImageObjectKey) {
+        const signedUrl = await generateSignedUrl(firstProductImageObjectKey);
+
+        productImages.push({
+          objectKey: firstProductImageObjectKey,
+          signedUrl,
+        });
+      }
+      return {
+        ...auction,
+        product: { ...auction.product, productImages },
+      };
+    }),
+  );
+
+  return {
+    completedAuctions,
+    cancelledAuctions,
+    upcomingAuctions,
+  };
 };
