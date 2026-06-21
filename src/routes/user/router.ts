@@ -1,3 +1,4 @@
+import isAdmin from '@/middlewares/isAdmin';
 import isLoggedIn from '@/middlewares/isLoggedIn';
 import upload from '@/middlewares/upload';
 import validateSchema from '@/middlewares/validateSchema';
@@ -12,6 +13,7 @@ import express from 'express';
 import {
   handleAddBookmark,
   handleCreatePassword,
+  handleGetAdminHomeData,
   handleGoogleAuth,
   handleLoginController,
   handleRefreshController,
@@ -39,5 +41,7 @@ router.route('/google-auth').post(validateSchema(googleAuthSchema), handleGoogle
 router
   .route('/create-password')
   .patch(isLoggedIn, validateSchema(createPasswordSchema), handleCreatePassword);
+
+router.route('/admin-home').get(isLoggedIn, isAdmin, handleGetAdminHomeData);
 
 export default router;

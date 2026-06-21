@@ -36,6 +36,7 @@ import {
   findRefreshToken,
   findUserByEmail,
   findUserById,
+  getAdminHomeData,
   removeBookmark,
   updateUserById,
   updateUserPassword,
@@ -286,4 +287,9 @@ export const handleCreatePassword = async (req: RequestWithUser, res: Response) 
     throw new BadRequestError('User with this email does not exist!');
   }
   return handleResponse(res, 200, 'Password created successfully', {});
+};
+
+export const handleGetAdminHomeData = async (req: RequestWithUser, res: Response) => {
+  const data = await getAdminHomeData();
+  return handleResponse(res, 200, '', { data });
 };
