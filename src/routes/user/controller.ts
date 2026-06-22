@@ -271,7 +271,7 @@ export const handleGoogleAuth = async (req: Request, res: Response) => {
     requiresPasswordCreation = false;
     delete userResponse.password;
   }
-  return handleResponse(res, 200, 'User created successfully', {
+  return handleResponse(res, 200, 'User logged in successfully', {
     user: { ...userResponse, profileImage: profileImageSignedUrl, requiresPasswordCreation },
     token,
   });
